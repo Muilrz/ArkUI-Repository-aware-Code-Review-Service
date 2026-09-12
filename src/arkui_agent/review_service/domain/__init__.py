@@ -1,5 +1,21 @@
-"""Pure Code Review domain types and invariants.
+"""Pure Code Review domain types and invariants."""
 
-This layer must not depend on application orchestration, ports, adapters, or
-legacy repository/graph/context implementations.
-"""
+from .evidence import ProviderEvidenceRef, ProviderStatus, ProviderStatusRef
+from .finding import ReviewFinding, ReviewSeverity
+from .identity import ReviewIdentity
+from .location import SourceRange
+from .request import ChangeRef, ReviewRequest
+from .result import ReviewResultSummary
+
+__all__ = [
+    "ChangeRef",
+    "ProviderEvidenceRef",
+    "ProviderStatus",
+    "ProviderStatusRef",
+    "ReviewFinding",
+    "ReviewIdentity",
+    "ReviewRequest",
+    "ReviewResultSummary",
+    "ReviewSeverity",
+    "SourceRange",
+]

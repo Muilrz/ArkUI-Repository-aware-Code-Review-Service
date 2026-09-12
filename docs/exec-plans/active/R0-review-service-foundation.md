@@ -2,7 +2,7 @@
 
 - **Phase Status:** In Progress
 - **Planning Status:** Active
-- **Product code in this migration:** Not authorized
+- **Current implementation milestone:** None; R0-B completed, R0-C not started
 - **Depends on:** completed P0 foundation; existing P1/P2 only as future provider contracts
 - **Architecture:** [Technical Roadmap](../../architecture/technical-roadmap.md), [Code Review Architecture](../../architecture/code-review-architecture.md), [ADR-0005](../../decisions/ADR-0005-code-review-service-pivot.md)
 - **Phase boundary:** [Phase Map §4](../phase-map.md#4-r0--review-service-foundation)
@@ -43,7 +43,7 @@
 | Milestone | Scope | Depends on | Status |
 | --- | --- | --- | --- |
 | R0-A | Package boundaries and dependency rules | P0 | Completed |
-| R0-B | Core review domain contracts | R0-A | Not Started |
+| R0-B | Core review domain contracts | R0-A | Completed |
 | R0-C | Application ports and job lifecycle contract | R0-B | Not Started |
 | R0-D | Configuration, errors, observability and foundation acceptance | R0-A–C | Not Started |
 
@@ -60,11 +60,12 @@
 
 ## R0-B — Core Review Domain Contracts
 
-- **Status:** Not Started
+- **Status:** Completed
 - **Goal:** 冻结后续阶段共享的最小平台无关 value objects。
 - **Deliverables:** `ReviewIdentity`、ReviewRequest/change refs、ReviewFinding、ReviewResult summary、provider evidence/status references 的 typed models；canonical serialization tests；spec。
 - **Acceptance Criteria:** identity 必含 `repository + pr_id + head_sha + review_policy_version`；finding 必含 file、location/range、category、severity、title、description、evidence、reasoning、suggestion、confidence；severity 仅为 Critical/High/Medium/Low；invalid/unknown fields 具有明确失败语义。
 - **Non-goals:** GitCode schema mapping、prompt/output parsing、finding detection。
+- **Acceptance:** [Core Domain Models spec](../../specs/review-service/core-domain-models.md) 已冻结全部 value/serialization contract；domain + package-boundary targeted tests 17/17 通过。未实现 ports、job lifecycle 或任何 R0-C/R1+ behavior。
 
 ## R0-C — Application Ports and Job Lifecycle Contract
 
@@ -119,7 +120,7 @@ R0 application ports 不依赖 MCP。R4 将 application APIs 映射为 MCP；R5 
 ## Phase acceptance checklist
 
 - [x] R0-A Completed
-- [ ] R0-B Completed
+- [x] R0-B Completed
 - [ ] R0-C Completed
 - [ ] R0-D Completed
 - [ ] R0 specs describe implemented behavior only
