@@ -4,7 +4,7 @@
 
 本文定义项目的核心业务架构：独立 Repository-aware Code Review Service。第一目标平台是 GitCode，第一阶段聚焦 Pull Request/diff 的 Stability、Memory / Resource / Lifetime 和 Functional Correctness review。
 
-本文定义未来边界；真实实现完成后，其 API、schema、不变量和失败语义进入 `docs/specs/`。最高层方向以 [Technical Roadmap](technical-roadmap.md) 为准。
+本文定义未来边界；真实实现完成后，其 API、schema、不变量和失败语义进入 [`docs/specs/review-service/`](../specs/review-service/README.md)。最高层方向以 [Technical Roadmap](technical-roadmap.md) 为准。
 
 ## 2. Architecture position
 

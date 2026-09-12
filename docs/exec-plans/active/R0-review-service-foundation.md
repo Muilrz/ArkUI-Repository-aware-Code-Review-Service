@@ -1,6 +1,6 @@
 # R0 — Review Service Foundation
 
-- **Phase Status:** Not Started
+- **Phase Status:** In Progress
 - **Planning Status:** Active
 - **Product code in this migration:** Not authorized
 - **Depends on:** completed P0 foundation; existing P1/P2 only as future provider contracts
@@ -42,7 +42,7 @@
 
 | Milestone | Scope | Depends on | Status |
 | --- | --- | --- | --- |
-| R0-A | Package boundaries and dependency rules | P0 | Not Started |
+| R0-A | Package boundaries and dependency rules | P0 | Completed |
 | R0-B | Core review domain contracts | R0-A | Not Started |
 | R0-C | Application ports and job lifecycle contract | R0-B | Not Started |
 | R0-D | Configuration, errors, observability and foundation acceptance | R0-A–C | Not Started |
@@ -51,11 +51,12 @@
 
 ## R0-A — Package Boundaries and Dependency Rules
 
-- **Status:** Not Started
+- **Status:** Completed
 - **Goal:** 建立 review service 的模块所有权、依赖方向和可导入骨架。
 - **Deliverables:** package layout；domain/application/ports/adapters dependency rules；architecture/spec link；boundary tests。
 - **Acceptance Criteria:** domain 不依赖 GitCode、MCP、LLM 或具体 storage；现有 P1/P2 包不被移动或重写；import/dependency tests 固定允许方向。
 - **Non-goals:** 任何 provider、engine、MCP 或 scheduler behavior。
+- **Acceptance:** `arkui_agent.review_service` 四层 package 与静态依赖规则已由 [Package Boundaries spec](../../specs/review-service/package-boundaries.md) 固定；targeted boundary tests 3/3 通过。未实现任何 R0-B/R1+ behavior。
 
 ## R0-B — Core Review Domain Contracts
 
@@ -117,7 +118,7 @@ R0 application ports 不依赖 MCP。R4 将 application APIs 映射为 MCP；R5 
 
 ## Phase acceptance checklist
 
-- [ ] R0-A Completed
+- [x] R0-A Completed
 - [ ] R0-B Completed
 - [ ] R0-C Completed
 - [ ] R0-D Completed

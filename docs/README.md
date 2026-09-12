@@ -40,6 +40,7 @@
 
 ## 历史规范与验证入口
 
+- 当前 Review Service：[`specs/review-service/README.md`](specs/review-service/README.md)
 - P1：`specs/repository-intelligence/`
 - P2：[`specs/code-graph/README.md`](specs/code-graph/README.md)
 - P3-A～E：[`specs/task-change-context/README.md`](specs/task-change-context/README.md)

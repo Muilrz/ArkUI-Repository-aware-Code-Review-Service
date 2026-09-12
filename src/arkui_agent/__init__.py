@@ -1,2 +1,1 @@
-"""Repository-aware tooling for the OpenHarmony ArkUI Ace Engine."""
-
+"""Repository-aware Code Review Service for ArkUI Ace Engine."""
