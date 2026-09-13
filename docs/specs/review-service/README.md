@@ -8,5 +8,6 @@
 | --- | --- | --- |
 | [Package boundaries](package-boundaries.md) | R0-A | `review_service` package layers、依赖方向和当前 non-goals |
 | [Core domain models](core-domain-models.md) | R0-B | identity、request/change refs、provider refs、finding、result summary 与 canonical serialization |
+| [Application ports and job lifecycle](application-ports-and-job-lifecycle.md) | R0-C | four ports、minimal knowledge carrier、job state/failure 与 synchronous orchestration |
 
-Application ports、job lifecycle、GitCode、Knowledge、Review Engine、MCP 和 Scheduler 将在对应 milestone 实现后再增加规范，不从 architecture 提前声明为现有能力。
+GitCode adapter、Repository Knowledge implementation、Review Engine implementation、durable store/dedup、MCP 和 Scheduler 将在对应 milestone 实现后再增加规范，不从 architecture 提前声明为现有能力。

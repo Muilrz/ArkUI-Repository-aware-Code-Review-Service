@@ -2,7 +2,7 @@
 
 - **Phase Status:** In Progress
 - **Planning Status:** Active
-- **Current implementation milestone:** None; R0-B completed, R0-C not started
+- **Current implementation milestone:** None; R0-C completed, R0-D not started
 - **Depends on:** completed P0 foundation; existing P1/P2 only as future provider contracts
 - **Architecture:** [Technical Roadmap](../../architecture/technical-roadmap.md), [Code Review Architecture](../../architecture/code-review-architecture.md), [ADR-0005](../../decisions/ADR-0005-code-review-service-pivot.md)
 - **Phase boundary:** [Phase Map §4](../phase-map.md#4-r0--review-service-foundation)
@@ -44,7 +44,7 @@
 | --- | --- | --- | --- |
 | R0-A | Package boundaries and dependency rules | P0 | Completed |
 | R0-B | Core review domain contracts | R0-A | Completed |
-| R0-C | Application ports and job lifecycle contract | R0-B | Not Started |
+| R0-C | Application ports and job lifecycle contract | R0-B | Completed |
 | R0-D | Configuration, errors, observability and foundation acceptance | R0-A–C | Not Started |
 
 一次 Codex coding task 默认只执行一个 milestone；若实际 diff 仍过大，应继续拆分，而不是跨入 R1。
@@ -69,11 +69,12 @@
 
 ## R0-C — Application Ports and Job Lifecycle Contract
 
-- **Status:** Not Started
+- **Status:** Completed
 - **Goal:** 定义 Service orchestration 需要的稳定 ports 和最小 job lifecycle。
 - **Deliverables:** GitCodeProvider、KnowledgeGateway、ReviewEngine、ResultStore ports；Review Job Manager application service contract；job states/errors；test doubles and orchestration contract tests；spec。
 - **Acceptance Criteria:** application layer 只依赖 ports；一次 fake request 可沿 fake gateway/engine/store 走通 deterministic lifecycle；失败不会保存为 success；不实现 durable dedup、real review 或 background loop。
 - **Non-goals:** R1–R5 adapter/behavior 实现。
+- **Acceptance:** 四个 structural ports、复用 R0-B models 的最小 job record/lifecycle、test doubles 与同步 orchestration 已由 [Application Ports and Job Lifecycle spec](../../specs/review-service/application-ports-and-job-lifecycle.md) 固定；targeted application-contract + package-boundary tests 14/14 通过。未实现 R0-D configuration/observability、durable state、真实 adapter/engine 或 background behavior。
 
 ## R0-D — Configuration, Errors, Observability and Acceptance
 
@@ -121,7 +122,7 @@ R0 application ports 不依赖 MCP。R4 将 application APIs 映射为 MCP；R5 
 
 - [x] R0-A Completed
 - [x] R0-B Completed
-- [ ] R0-C Completed
+- [x] R0-C Completed
 - [ ] R0-D Completed
 - [ ] R0 specs describe implemented behavior only
 - [ ] Required targeted tests passed through the trusted validation path

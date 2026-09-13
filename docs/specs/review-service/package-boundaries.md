@@ -35,9 +35,9 @@ domain ← ports ← application
 
 这些规则由 `tests/unit/review_service/test_package_boundaries.py` 基于 Python AST 检查，覆盖绝对和相对 Python imports，并阻止 domain/ports/application 绕行依赖既有 `arkui_agent.*` packages。测试不宣称验证运行时 plugin loading 或非 Python 依赖。
 
-## Deferred behavior
+## Milestone ownership
 
-- R0-B：ReviewIdentity、ReviewRequest、ReviewFinding 和 provider evidence/status value objects。
-- R0-C：GitCodeProvider、KnowledgeGateway、ReviewEngine、ResultStore ports 与 job lifecycle。
+- R0-B 已在 [Core Domain Models](core-domain-models.md) 冻结 ReviewIdentity、ReviewRequest、ReviewFinding 和 provider evidence/status value objects。
+- R0-C 已在 [Application Ports and Job Lifecycle](application-ports-and-job-lifecycle.md) 定义 GitCodeProvider、KnowledgeGateway、ReviewEngine、ResultStore ports 与最小 job lifecycle。
 - R0-D：configuration、typed errors 和 observability foundation。
 - R1+：所有 concrete GitCode、Knowledge、Review Engine、MCP、Scheduler 与 Skill behavior。

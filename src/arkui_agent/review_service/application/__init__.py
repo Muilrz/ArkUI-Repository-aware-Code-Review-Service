@@ -1,5 +1,5 @@
-"""Code Review use-case orchestration.
+"""Code Review use-case orchestration."""
 
-Application code may depend on domain types and ports, but never on concrete
-adapters or transport/platform implementations.
-"""
+from .job_manager import ReviewJobManager
+
+__all__ = ["ReviewJobManager"]

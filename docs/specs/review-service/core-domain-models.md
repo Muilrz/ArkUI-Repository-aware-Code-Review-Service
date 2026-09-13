@@ -96,7 +96,7 @@ Finding 至少引用一个 `ProviderEvidenceRef`；confidence 是闭区间 `[0, 
 
 ## ReviewResultSummary
 
-Summary 保存 identity、非负 finding count、degraded flag 和 provider statuses。Provider name 不重复；存在 non-ready provider 时 `degraded` 必须为 true。完整 findings、job state、timestamps、failure 和 persistence contract 属于 R0-C/R3。
+Summary 保存 identity、非负 finding count、degraded flag 和 provider statuses。Provider name 不重复；存在 non-ready provider 时 `degraded` 必须为 true。R0-C 已在 [Application Ports and Job Lifecycle](application-ports-and-job-lifecycle.md) 用 `ReviewJobRecord` 组合 findings、最小 job state 与 failure；timestamps、durable persistence 和完整 review result contract 仍属于后续 milestone。
 
 ## Failure behavior
 

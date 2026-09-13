@@ -8,6 +8,18 @@ from pathlib import Path
 PACKAGE_ROOT = Path(__file__).parents[3] / "src" / "arkui_agent"
 SERVICE_PACKAGE = "arkui_agent.review_service"
 LAYERS = ("domain", "ports", "application", "adapters")
+R0_C_PUBLIC_MODULES = {
+    "application": ("arkui_agent.review_service.application.job_manager",),
+    "domain": ("arkui_agent.review_service.domain.job",),
+    "ports": (
+        "arkui_agent.review_service.ports.engine",
+        "arkui_agent.review_service.ports.errors",
+        "arkui_agent.review_service.ports.gitcode",
+        "arkui_agent.review_service.ports.knowledge",
+        "arkui_agent.review_service.ports.models",
+        "arkui_agent.review_service.ports.result_store",
+    ),
+}
 
 
 def imported_modules(path: Path) -> tuple[str, ...]:
@@ -45,6 +57,15 @@ class ReviewServicePackageBoundaryTests(unittest.TestCase):
         for layer in LAYERS:
             with self.subTest(layer=layer):
                 __import__(f"{SERVICE_PACKAGE}.{layer}")
+
+    def test_r0_c_public_modules_are_owned_by_declared_layers(self) -> None:
+        for layer, module_names in R0_C_PUBLIC_MODULES.items():
+            for module_name in module_names:
+                with self.subTest(layer=layer, module=module_name):
+                    module = __import__(module_name, fromlist=("*",))
+                    module_path = Path(module.__file__).resolve()
+                    relative_parts = module_path.relative_to(PACKAGE_ROOT).parts
+                    self.assertEqual(relative_parts[1], layer)
 
     def test_service_layers_only_point_inward(self) -> None:
         allowed_service_dependencies = {

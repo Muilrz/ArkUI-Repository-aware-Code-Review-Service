@@ -3,6 +3,12 @@
 from .evidence import ProviderEvidenceRef, ProviderStatus, ProviderStatusRef
 from .finding import ReviewFinding, ReviewSeverity
 from .identity import ReviewIdentity
+from .job import (
+    ReviewFailureStage,
+    ReviewJobFailure,
+    ReviewJobRecord,
+    ReviewJobState,
+)
 from .location import SourceRange
 from .request import ChangeRef, ReviewRequest
 from .result import ReviewResultSummary
@@ -13,7 +19,11 @@ __all__ = [
     "ProviderStatus",
     "ProviderStatusRef",
     "ReviewFinding",
+    "ReviewFailureStage",
     "ReviewIdentity",
+    "ReviewJobFailure",
+    "ReviewJobRecord",
+    "ReviewJobState",
     "ReviewRequest",
     "ReviewResultSummary",
     "ReviewSeverity",
