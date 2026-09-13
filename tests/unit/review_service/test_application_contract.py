@@ -110,7 +110,7 @@ class ReviewApplicationContractTests(unittest.TestCase):
         self.assertIsInstance(engine, ReviewEngine)
         self.assertIsInstance(store, ResultStore)
         self.assertIs(gitcode.load_review(self.request.identity), self.request)
-        with self.assertRaisesRegex(GitCodeProviderError, "review request not found"):
+        with self.assertRaises(GitCodeProviderError) as raised:
             gitcode.load_review(
                 ReviewIdentity(
                     repository="arkui/ace_engine",
@@ -119,6 +119,8 @@ class ReviewApplicationContractTests(unittest.TestCase):
                     review_policy_version="v1",
                 )
             )
+        self.assertEqual(str(raised.exception), "GitCode provider failed")
+        self.assertIn("review request not found", raised.exception.reason)
 
     def test_knowledge_bundle_requires_ordered_unique_provider_data(self) -> None:
         with self.assertRaisesRegex(ValueError, "evidence must be a sequence"):
@@ -199,7 +201,8 @@ class ReviewApplicationContractTests(unittest.TestCase):
 
         self.assertEqual(record.state, ReviewJobState.FAILED)
         self.assertEqual(record.failure.stage, ReviewFailureStage.KNOWLEDGE)
-        self.assertEqual(record.failure.reason, "live source unavailable")
+        self.assertEqual(record.failure.reason, "knowledge collection failed")
+        self.assertNotIn("live source unavailable", repr(record))
         self.assertEqual(engine.calls, [])
         self.assertNotIn(ReviewJobState.SUCCEEDED, [item.state for item in store.history])
         self.assertIs(store.get(self.request.identity), record)
@@ -219,6 +222,7 @@ class ReviewApplicationContractTests(unittest.TestCase):
 
         self.assertEqual(record.state, ReviewJobState.FAILED)
         self.assertEqual(record.failure.stage, ReviewFailureStage.ENGINE)
+        self.assertEqual(record.failure.reason, "review engine failed")
         self.assertNotIn(ReviewJobState.SUCCEEDED, [item.state for item in store.history])
 
     def test_store_failure_is_not_hidden_or_rewritten_as_success(self) -> None:

@@ -39,5 +39,5 @@ domain ← ports ← application
 
 - R0-B 已在 [Core Domain Models](core-domain-models.md) 冻结 ReviewIdentity、ReviewRequest、ReviewFinding 和 provider evidence/status value objects。
 - R0-C 已在 [Application Ports and Job Lifecycle](application-ports-and-job-lifecycle.md) 定义 GitCodeProvider、KnowledgeGateway、ReviewEngine、ResultStore ports 与最小 job lifecycle。
-- R0-D：configuration、typed errors 和 observability foundation。
+- R0-D 已在 [Foundation Configuration, Errors and Observability](foundation-configuration-errors-observability.md) 定义安全 configuration、typed errors 和 observability foundation，并由 [R0 Foundation Traceability](r0-traceability.md) 汇总 phase evidence。
 - R1+：所有 concrete GitCode、Knowledge、Review Engine、MCP、Scheduler 与 Skill behavior。

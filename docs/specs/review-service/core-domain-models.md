@@ -100,4 +100,4 @@ Summary 保存 identity、非负 finding count、degraded flag 和 provider stat
 
 ## Failure behavior
 
-每个公开 value object 都提供 `to_dict` / `from_dict` 与 canonical `to_json` / `from_json`。反序列化使用 exact-field contract：missing、unknown、错误类型、非法 enum、空必填字符串、非法 range/confidence 或不一致 nested value 以 `ValueError` 失败。R0-D 可以引入更细 typed error taxonomy，但不能把 invalid input 静默接受。
+每个公开 value object 都提供 `to_dict` / `from_dict` 与 canonical `to_json` / `from_json`。反序列化使用 exact-field contract：missing、unknown、错误类型、非法 enum、空必填字符串、非法 range/confidence 或不一致 nested value 以 `ValueError` 失败。R0-D 的 [error taxonomy](foundation-configuration-errors-observability.md#error-taxonomy) 将这些 domain `ValueError` 分类为 `validation`，但不改变或静默接受 invalid input。

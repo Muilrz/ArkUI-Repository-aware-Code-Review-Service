@@ -51,6 +51,8 @@ P3 历史状态详见 [`superseded/P3-task-change-context.md`](superseded/P3-tas
 
 # 4. R0 — Review Service Foundation
 
+**Status:** Completed
+
 ## Goal
 
 建立平台无关、可测试的 Code Review Service 基础边界，使后续 GitCode、Knowledge、Review Engine 和 MCP 能在稳定 domain/application ports 上独立演进。
@@ -326,4 +328,4 @@ Status 统一使用：
 
 开始实现时只将当前 milestone 设为 `In Progress`。只有 Acceptance Criteria 与必需测试全部通过才设为 `Completed`。路线被替代但未完成时设为 `Superseded` 并移至 `superseded/`，不得伪装成完成。
 
-当前 active plan 是 [`active/R0-review-service-foundation.md`](active/R0-review-service-foundation.md)，本次架构迁移不授权开始任何 R0 产品代码。
+R0 已完成，计划归档于 [`completed/R0-review-service-foundation.md`](completed/R0-review-service-foundation.md)。当前没有 active plan；R1 尚未开始，后续实现必须由新的 active plan 与明确任务启动。

@@ -1,8 +1,8 @@
 # R0 — Review Service Foundation
 
-- **Phase Status:** In Progress
-- **Planning Status:** Active
-- **Current implementation milestone:** None; R0-C completed, R0-D not started
+- **Phase Status:** Completed
+- **Planning Status:** Completed
+- **Current implementation milestone:** None; R0 completed, R1 not started
 - **Depends on:** completed P0 foundation; existing P1/P2 only as future provider contracts
 - **Architecture:** [Technical Roadmap](../../architecture/technical-roadmap.md), [Code Review Architecture](../../architecture/code-review-architecture.md), [ADR-0005](../../decisions/ADR-0005-code-review-service-pivot.md)
 - **Phase boundary:** [Phase Map §4](../phase-map.md#4-r0--review-service-foundation)
@@ -11,7 +11,7 @@
 
 建立平台无关、可测试的 Code Review Service 基础，使 R1–R5 能在稳定 domain/application ports 上实现 GitCode、Repository Knowledge、Review Engine、MCP 和 auto review，而不引入 generic Agent Runtime。
 
-本文件只规划未来 R0。创建或更新本计划不表示任何 R0 产品能力已实现；开始实现时须由明确任务选择一个 milestone，并按 AGENTS.md 更新状态。
+本文件记录已完成的 R0 foundation 范围与验收事实；R1 必须由新的 active plan 和明确任务启动。
 
 ## In scope
 
@@ -45,7 +45,7 @@
 | R0-A | Package boundaries and dependency rules | P0 | Completed |
 | R0-B | Core review domain contracts | R0-A | Completed |
 | R0-C | Application ports and job lifecycle contract | R0-B | Completed |
-| R0-D | Configuration, errors, observability and foundation acceptance | R0-A–C | Not Started |
+| R0-D | Configuration, errors, observability and foundation acceptance | R0-A–C | Completed |
 
 一次 Codex coding task 默认只执行一个 milestone；若实际 diff 仍过大，应继续拆分，而不是跨入 R1。
 
@@ -78,11 +78,12 @@
 
 ## R0-D — Configuration, Errors, Observability and Acceptance
 
-- **Status:** Not Started
+- **Status:** Completed
 - **Goal:** 提供后续 adapter 可复用的安全配置、错误分类和 correlation 基础，并完成 R0 phase acceptance。
 - **Deliverables:** config boundary；typed error taxonomy；review/job correlation identifiers；structured diagnostic contract；R0 traceability matrix and targeted tests。
 - **Acceptance Criteria:** secrets 不进入 repr/log/result；domain/application failures 可稳定分类；correlation 不改变 review identity；Phase Map R0 DoD 逐项有 spec/test evidence；所有 required validation 通过后才能标记 R0 Completed。
 - **Non-goals:** production telemetry backend、credential acquisition、retry/backoff policy beyond the port contract。
+- **Acceptance:** [Foundation Configuration, Errors and Observability spec](../../specs/review-service/foundation-configuration-errors-observability.md) 固定公共配置/secret 分离、统一 failure taxonomy、独立 correlation 与脱敏 diagnostic contract；[R0 Foundation Traceability](../../specs/review-service/r0-traceability.md) 映射全部 Phase Map DoD。Targeted application/foundation/package-boundary tests 23/23 通过；未实现 production telemetry、真实 config/GitCode adapter 或 R1+ behavior。
 
 ## Cross-cutting contract decisions
 
@@ -116,18 +117,18 @@ R0 application ports 不依赖 MCP。R4 将 application APIs 映射为 MCP；R5 
 - 文档与 schema link 做相对链接检查；
 - 完成前运行 `git diff --check`。
 
-本次文档迁移不执行上述产品测试，也不把任何 milestone 改为 `In Progress` 或 `Completed`。
+R0-D 完成时仅运行 trusted Stop Hook 选择的 R0 contract tests；未运行 strict full 或 ArkUI baseline。
 
 ## Phase acceptance checklist
 
 - [x] R0-A Completed
 - [x] R0-B Completed
 - [x] R0-C Completed
-- [ ] R0-D Completed
-- [ ] R0 specs describe implemented behavior only
-- [ ] Required targeted tests passed through the trusted validation path
-- [ ] Phase Map R0 DoD fully traceable
-- [ ] No R1+ behavior claimed as implemented
+- [x] R0-D Completed
+- [x] R0 specs describe implemented behavior only
+- [x] Required targeted tests passed through the trusted validation path
+- [x] Phase Map R0 DoD fully traceable
+- [x] No R1+ behavior claimed as implemented
 
 ## Risks and controls
 

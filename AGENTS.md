@@ -64,7 +64,7 @@
 - R5 — Auto Review & Code Review Skill
 - R6 — Evaluation & Hardening
 
-当前 active plan 是 `docs/exec-plans/active/R0-review-service-foundation.md`。只有任务明确要求实现相应 milestone 时才修改产品代码；不得因计划已存在而提前实现 R0 或后续阶段。
+R0 已完成，计划保存在 `docs/exec-plans/completed/R0-review-service-foundation.md`；当前没有 active plan。R1 或后续阶段必须先建立对应 active plan，并由明确任务启动，不得因 roadmap 已存在而提前实现。
 
 ## Core Architecture Boundaries
 

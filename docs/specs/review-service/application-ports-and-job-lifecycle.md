@@ -14,7 +14,7 @@ R0-C 没有实现 GitCode HTTP、Repository Knowledge provider、review reasonin
 load_review(ReviewIdentity) -> ReviewRequest
 ```
 
-输入与输出均为 R0-B model。失败使用 `GitCodeProviderError`。R0-C 只定义 port，不在 Job Manager 中主动加载 PR；normalized request 是当前 application entry point。
+输入与输出均为 R0-B model。失败使用 `GitCodeProviderError`。R0-C 只定义 port，不在 Job Manager 中主动加载 PR；normalized request 是当前 application entry point。R0-D 起 error 的 `str`/`repr` 使用无私有 detail 的公开 message，内部 detail 仅由显式 `.reason` 读取。
 
 ### KnowledgeGateway
 
@@ -41,7 +41,7 @@ get(ReviewIdentity) -> ReviewJobRecord | None
 
 R0-C 只定义 latest-record port。持久化、transaction、并发 claim、dedup、retry/restart 和 history retention 属于后续阶段。失败使用 `ResultStoreError`。
 
-四个 ports 都是 `runtime_checkable Protocol`；所有 expected port error 都要求非空 reason；concrete adapters 位于后续 milestone。
+四个 ports 都是 `runtime_checkable Protocol`；所有 expected port error 都要求非空 reason，并由 R0-D [error taxonomy](foundation-configuration-errors-observability.md#error-taxonomy) 提供稳定公开分类；concrete adapters 位于后续 milestone。
 
 ## Job model
 
@@ -64,7 +64,7 @@ PENDING -> RUNNING -> SUCCEEDED
 - pending/running 不含 findings、summary 或 failure；
 - succeeded 必须有 identity/count 一致的 R0-B `ReviewResultSummary`，可以有 zero findings，不能有 failure；
 - failed 必须有 `ReviewJobFailure`，不能保存 findings 或 success summary；
-- R0-C failure stage 只区分 `knowledge` 与 `engine`。更细 error taxonomy 属于 R0-D。
+- R0-C failure stage 只区分 `knowledge` 与 `engine`。R0-D taxonomy 映射这两个既有 stage，不替换 `ReviewJobFailure`。
 
 ## ReviewJobManager
 
@@ -77,7 +77,7 @@ PENDING -> RUNNING -> SUCCEEDED
 5. 从 findings 和 provider statuses 构建 R0-B summary；
 6. 保存并返回 succeeded。
 
-`KnowledgeGatewayError` 或 `ReviewEngineError` 被转换为相应 failed record 并保存。ResultStoreError 和未声明异常向调用者传播，不能被伪装为 failed persistence 或 success。R0-C 不包含 retry、timeout、cancel、dedup、async queue 或 background execution。
+`KnowledgeGatewayError` 或 `ReviewEngineError` 被转换为相应 failed record 并保存；R0-D 起保存的是 taxonomy 固定的公开 message，不复制 port 的私有 reason。ResultStoreError 和未声明异常向调用者传播，不能被伪装为 failed persistence 或 success。R0-C 不包含 retry、timeout、cancel、dedup、async queue 或 background execution。
 
 ## Test doubles
 

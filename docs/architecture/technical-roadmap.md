@@ -327,4 +327,4 @@ R6 Evaluation & Hardening
 - **R5**：实现 Service-owned auto review，并交付只编排 MCP 的 Code Review Skill。
 - **R6**：形成正式 benchmark、ablation、reliability/security/performance hardening。
 
-各 Phase 的 Goal、In Scope、Out of Scope 和 Definition of Done 以 [`../exec-plans/phase-map.md`](../exec-plans/phase-map.md) 为准。当前仅有 R0 active plan；计划存在不代表授权实现产品代码。
+各 Phase 的 Goal、In Scope、Out of Scope 和 Definition of Done 以 [`../exec-plans/phase-map.md`](../exec-plans/phase-map.md) 为准。R0 foundation 已完成并归档；当前没有 active plan，R1 尚未开始，roadmap 本身不授权实现后续产品代码。

@@ -1,12 +1,30 @@
 """Abstract boundaries required by the Code Review application layer."""
 
+from .configuration import (
+    ReviewConfigurationSource,
+    ReviewServiceConfig,
+    SecretValue,
+)
+from .diagnostics import (
+    DiagnosticAttribute,
+    DiagnosticLevel,
+    DiagnosticSink,
+    ReviewCorrelation,
+    ReviewDiagnostic,
+)
 from .engine import ReviewEngine
 from .errors import (
     GitCodeProviderError,
     KnowledgeGatewayError,
     ResultStoreError,
+    ReviewApplicationError,
+    ReviewConfigurationError,
     ReviewEngineError,
+    ReviewErrorCategory,
+    ReviewErrorInfo,
     ReviewPortError,
+    ReviewServiceError,
+    classify_review_failure,
 )
 from .gitcode import GitCodeProvider
 from .knowledge import KnowledgeGateway
@@ -14,6 +32,9 @@ from .models import KnowledgeBundle
 from .result_store import ResultStore
 
 __all__ = [
+    "DiagnosticAttribute",
+    "DiagnosticLevel",
+    "DiagnosticSink",
     "GitCodeProvider",
     "GitCodeProviderError",
     "KnowledgeBundle",
@@ -21,7 +42,18 @@ __all__ = [
     "KnowledgeGatewayError",
     "ResultStore",
     "ResultStoreError",
+    "ReviewApplicationError",
+    "ReviewConfigurationError",
+    "ReviewConfigurationSource",
+    "ReviewCorrelation",
+    "ReviewDiagnostic",
     "ReviewEngine",
     "ReviewEngineError",
+    "ReviewErrorCategory",
+    "ReviewErrorInfo",
     "ReviewPortError",
+    "ReviewServiceConfig",
+    "ReviewServiceError",
+    "SecretValue",
+    "classify_review_failure",
 ]
