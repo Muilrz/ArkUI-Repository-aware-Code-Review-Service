@@ -1,8 +1,8 @@
 # Fast-MVP — GitCode ArkUI Automated Code Review
 
 - **Route Status:** Active
-- **Current milestone:** M1 — GitCode Minimal Integration
-- **Current milestone status:** In Progress
+- **Current milestone:** M2 — Code Agent Review Runner
+- **Current milestone status:** Completed
 - **Supersedes:** incomplete R1–R6 complete Service/MCP route
 - **Reuses:** completed P0/P1/P2, P3-A～E contracts, and R0 Review Service Foundation where useful
 - **Architecture:** [Technical Roadmap](../../architecture/technical-roadmap.md)
@@ -105,15 +105,15 @@ Structured result 至少表达 status、repository/PR/base/head identity、provi
 
 ### M1 — GitCode Minimal Integration
 
-- **Status:** In Progress
+- **Status:** Completed
 - **Scope:** list/open PR、metadata、author、base/head SHA、changed files/diff，以及发布 summary comment 的最小 boundary。
 - **Acceptance:** `arkui-review review --pr <PR_ID>` 能获取并打印真实、revision-bound PR context；无 MVP 外 GitCode 功能。
 
-### M2 — Codex Review Runner
+### M2 — Code Agent Review Runner
 
-- **Status:** Not Started
-- **Scope:** PR context → non-interactive Codex → validated JSON result。
-- **Acceptance:** structured findings、valid zero findings、Agent failure/invalid output 明确区分；第一版无需 inline comment。
+- **Status:** Completed
+- **Scope:** PR context → platform-neutral Code Agent boundary → selected backend → validated JSON result；Codex is the first validated backend。
+- **Acceptance:** 上层不依赖 Codex-specific command/output；structured findings、valid zero findings、Agent failure/invalid output 明确区分；第一版无需 inline comment。
 
 ### M3 — ArkUI Knowledge & Review Skill
 

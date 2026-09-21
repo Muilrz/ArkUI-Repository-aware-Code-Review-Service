@@ -12,5 +12,6 @@
 | [Foundation configuration, errors and observability](foundation-configuration-errors-observability.md) | R0-D | safe config/secret boundary、unified failure taxonomy、correlation 与 structured diagnostics |
 | [R0 foundation traceability](r0-traceability.md) | R0-D | Phase Map R0 Definition of Done 的 spec/implementation/test evidence |
 | [Fast-MVP GitCode PR context and CLI](fast-mvp-gitcode-cli.md) | M0/M1 | GitCode REST read/comment boundary、PR carrier、CLI 与失败语义 |
+| [Fast-MVP Code Agent Review Runner](fast-mvp-code-agent-runner.md) | M2 | 通用 Agent port、Codex backend、structured `ReviewResult` 与失败语义 |
 
-除 Fast-MVP M1 已实现的最小 GitCode PR read/comment boundary 外，Repository Knowledge implementation、Review Engine implementation、durable store/dedup、MCP 和 Scheduler 仍未实现，不从 architecture 提前声明为现有能力。
+除 Fast-MVP M1 GitCode boundary 和 M2 diff-only Code Agent runner 外，Repository Knowledge implementation、result publishing、durable store/dedup、MCP 和 Scheduler 仍未实现，不从 architecture 提前声明为现有能力。

@@ -37,4 +37,4 @@ Token 不进入 public config、普通字符串/repr、CLI output、异常公开
 arkui-review review --repository owner/repo --pr <positive integer> [--show-diff]
 ```
 
-`--repository` 缺失时读取 `GITCODE_REPOSITORY`。成功输出 repository、PR id、title、author、base/head SHA、changed-files count 和 UTF-8 diff byte size；`--show-diff` 额外输出 combined diff。CLI 只读取并打印 PR context，不运行 Codex review、不发布评论、不轮询、不持久化状态。
+`--repository` 缺失时读取 `GITCODE_REPOSITORY`。不指定 Agent 时，成功输出 repository、PR id、title、author、base/head SHA、changed-files count 和 UTF-8 diff byte size；`--show-diff` 额外输出 combined diff。M2 在此 context-only 行为之外增加可选的 Code Agent review；CLI 仍不发布评论、不轮询、不持久化状态。

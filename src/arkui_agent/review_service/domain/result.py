@@ -2,16 +2,104 @@ from __future__ import annotations
 
 from collections.abc import Sequence
 from dataclasses import dataclass
+from enum import StrEnum
 from typing import Any
 
 from ._validation import (
     canonical_json,
     load_json_object,
+    non_empty_string,
     non_negative_int,
     strict_mapping,
 )
 from .evidence import ProviderStatus, ProviderStatusRef
+from .finding import ReviewFinding
 from .identity import ReviewIdentity
+
+
+class ReviewResultStatus(StrEnum):
+    SUCCESS = "success"
+
+
+@dataclass(frozen=True, slots=True)
+class ReviewResult:
+    """Successful platform-neutral result returned by a Code Agent backend.
+
+    Invocation and validation failures are represented by typed exceptions, never
+    by an empty findings collection.
+    """
+
+    status: ReviewResultStatus
+    repository: str
+    pr_id: str
+    base_sha: str
+    head_sha: str
+    findings: tuple[ReviewFinding, ...]
+
+    def __post_init__(self) -> None:
+        if not isinstance(self.status, ReviewResultStatus):
+            try:
+                object.__setattr__(self, "status", ReviewResultStatus(self.status))
+            except (TypeError, ValueError) as error:
+                raise ValueError(
+                    f"unknown review result status: {self.status!r}"
+                ) from error
+        for field in ("repository", "pr_id", "base_sha", "head_sha"):
+            object.__setattr__(
+                self,
+                field,
+                non_empty_string(getattr(self, field), field=field),
+            )
+        if not isinstance(self.findings, Sequence):
+            raise ValueError("findings must be a sequence of ReviewFinding")
+        findings = tuple(self.findings)
+        if any(not isinstance(finding, ReviewFinding) for finding in findings):
+            raise ValueError("findings must be a sequence of ReviewFinding")
+        object.__setattr__(self, "findings", findings)
+
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "status": self.status.value,
+            "repository": self.repository,
+            "pr_id": self.pr_id,
+            "base_sha": self.base_sha,
+            "head_sha": self.head_sha,
+            "findings": [finding.to_dict() for finding in self.findings],
+        }
+
+    def to_json(self) -> str:
+        return canonical_json(self.to_dict())
+
+    @classmethod
+    def from_dict(cls, value: object) -> ReviewResult:
+        data = strict_mapping(
+            value,
+            type_name=cls.__name__,
+            required=frozenset(
+                {"status", "repository", "pr_id", "base_sha", "head_sha", "findings"}
+            ),
+        )
+        raw_findings = data["findings"]
+        if isinstance(raw_findings, (str, bytes)) or not isinstance(
+            raw_findings, Sequence
+        ):
+            raise ValueError("findings must be a sequence of ReviewFinding")
+        try:
+            findings = tuple(ReviewFinding.from_dict(item) for item in raw_findings)
+        except TypeError as error:
+            raise ValueError("findings must be a sequence of ReviewFinding") from error
+        return cls(
+            status=data["status"],
+            repository=data["repository"],
+            pr_id=data["pr_id"],
+            base_sha=data["base_sha"],
+            head_sha=data["head_sha"],
+            findings=findings,
+        )
+
+    @classmethod
+    def from_json(cls, payload: str) -> ReviewResult:
+        return cls.from_dict(load_json_object(payload, type_name=cls.__name__))
 
 
 @dataclass(frozen=True, slots=True)

@@ -5,6 +5,7 @@ from .configuration import (
     ReviewServiceConfig,
     SecretValue,
 )
+from .code_agent import CodeAgentRunner
 from .diagnostics import (
     DiagnosticAttribute,
     DiagnosticLevel,
@@ -14,6 +15,7 @@ from .diagnostics import (
 )
 from .engine import ReviewEngine
 from .errors import (
+    CodeAgentError,
     GitCodeProviderError,
     KnowledgeGatewayError,
     ResultStoreError,
@@ -32,6 +34,8 @@ from .models import KnowledgeBundle
 from .result_store import ResultStore
 
 __all__ = [
+    "CodeAgentError",
+    "CodeAgentRunner",
     "DiagnosticAttribute",
     "DiagnosticLevel",
     "DiagnosticSink",

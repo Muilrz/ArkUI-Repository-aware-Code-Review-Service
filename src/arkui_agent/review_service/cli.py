@@ -6,9 +6,14 @@ import sys
 from collections.abc import Callable, Mapping, Sequence
 from typing import Protocol, TextIO
 
-from .adapters import GitCodeRestAdapter
-from .domain import PullRequestContext
-from .ports import ReviewServiceError, SecretValue
+from .adapters import CodexAgentRunner, GitCodeRestAdapter
+from .application import (
+    CodeAgentReviewService,
+    build_agent_output_schema,
+    build_diff_review_prompt,
+)
+from .domain import PullRequestContext, ReviewResult
+from .ports import CodeAgentRunner, ReviewServiceError, SecretValue
 
 
 class PullRequestContextReader(Protocol):
@@ -18,6 +23,7 @@ class PullRequestContextReader(Protocol):
 
 
 AdapterFactory = Callable[[str, SecretValue | None], PullRequestContextReader]
+AgentRunnerFactory = Callable[[str], CodeAgentRunner]
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -37,6 +43,10 @@ def build_parser() -> argparse.ArgumentParser:
         action="store_true",
         help="print the combined pull request diff",
     )
+    review.add_argument(
+        "--agent",
+        help="run a structured review with the selected backend (currently: codex)",
+    )
     return parser
 
 
@@ -47,6 +57,7 @@ def run(
     stdout: TextIO | None = None,
     stderr: TextIO | None = None,
     adapter_factory: AdapterFactory | None = None,
+    agent_runner_factory: AgentRunnerFactory | None = None,
 ) -> int:
     parser = build_parser()
     args = parser.parse_args(argv)
@@ -66,6 +77,16 @@ def run(
     except (ReviewServiceError, ValueError) as error:
         print(f"error: {error}", file=errors)
         return 1
+
+    if args.agent is not None:
+        runner_factory = agent_runner_factory or _create_agent_runner
+        try:
+            result = CodeAgentReviewService(runner_factory(args.agent)).review(context)
+        except (ReviewServiceError, ValueError) as error:
+            print(f"error: {error}", file=errors)
+            return 1
+        _print_review_result(result, output)
+        return 0
 
     print(f"repository: {context.repository}", file=output)
     print(f"pr_id: {context.pr_id}", file=output)
@@ -89,6 +110,19 @@ def _create_adapter(
     repository: str, access_token: SecretValue | None
 ) -> GitCodeRestAdapter:
     return GitCodeRestAdapter(repository=repository, access_token=access_token)
+
+
+def _create_agent_runner(backend: str) -> CodeAgentRunner:
+    if backend != "codex":
+        raise ValueError(f"unsupported agent backend: {backend}")
+    return CodexAgentRunner(
+        prompt_builder=build_diff_review_prompt,
+        schema_builder=build_agent_output_schema,
+    )
+
+
+def _print_review_result(result: ReviewResult, output: TextIO) -> None:
+    print(result.to_json(), file=output)
 
 
 def _positive_integer(value: str) -> int:

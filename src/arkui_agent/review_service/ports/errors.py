@@ -12,6 +12,7 @@ class ReviewErrorCategory(StrEnum):
     CONFIGURATION = "configuration"
     APPLICATION = "application"
     GITCODE_PROVIDER = "gitcode_provider"
+    CODE_AGENT = "code_agent"
     KNOWLEDGE_GATEWAY = "knowledge_gateway"
     REVIEW_ENGINE = "review_engine"
     RESULT_STORE = "result_store"
@@ -95,6 +96,14 @@ class GitCodeProviderError(ReviewPortError):
     category = ReviewErrorCategory.GITCODE_PROVIDER
     code = "review.port.gitcode"
     public_message = "GitCode provider failed"
+
+
+class CodeAgentError(ReviewPortError):
+    """A Code Agent could not return a validated review result."""
+
+    category = ReviewErrorCategory.CODE_AGENT
+    code = "review.port.code_agent"
+    public_message = "code agent review failed"
 
 
 class KnowledgeGatewayError(ReviewPortError):

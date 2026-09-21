@@ -7,11 +7,17 @@ from .gitcode_rest import (
     HttpTransport,
     UrllibHttpTransport,
 )
+from .codex_agent import CodexAgentRunner
+from .process import ProcessResult, ProcessRunner, SubprocessRunner
 
 __all__ = [
     "DEFAULT_GITCODE_API_BASE",
+    "CodexAgentRunner",
     "GitCodeRestAdapter",
     "HttpResponse",
     "HttpTransport",
+    "ProcessResult",
+    "ProcessRunner",
+    "SubprocessRunner",
     "UrllibHttpTransport",
 ]

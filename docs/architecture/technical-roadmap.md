@@ -114,7 +114,7 @@ P0、P1、P2 是已完成历史基础。completed plans、specs、tests、frozen
 ```text
 M0 Foundation & External Tool Smoke
  → M1 GitCode Minimal Integration
- → M2 Codex Review Runner
+ → M2 Code Agent Review Runner (Codex first backend)
  → M3 ArkUI Knowledge & Review Skill
  → M4 GitCode Review Publishing
  → M5 Auto Polling & Knowledge Refresh

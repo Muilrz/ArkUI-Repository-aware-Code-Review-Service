@@ -4,7 +4,12 @@ import io
 import unittest
 
 from arkui_agent.review_service.cli import build_parser, run
-from arkui_agent.review_service.domain import PullRequestContext
+from arkui_agent.review_service.domain import (
+    AgentReviewRequest,
+    PullRequestContext,
+    ReviewResult,
+    ReviewResultStatus,
+)
 from arkui_agent.review_service.ports import SecretValue
 
 
@@ -25,6 +30,18 @@ class StaticAdapter:
         if str(pr_id) != CONTEXT.pr_id:
             raise AssertionError("unexpected PR id")
         return CONTEXT
+
+
+class StaticAgentRunner:
+    def review(self, request: AgentReviewRequest) -> ReviewResult:
+        return ReviewResult(
+            status=ReviewResultStatus.SUCCESS,
+            repository=request.repository,
+            pr_id=request.pr_id,
+            base_sha=request.base_sha,
+            head_sha=request.head_sha,
+            findings=(),
+        )
 
 
 class FastMvpCliTests(unittest.TestCase):
@@ -99,6 +116,57 @@ class FastMvpCliTests(unittest.TestCase):
         parser = build_parser()
         with self.assertRaises(SystemExit):
             parser.parse_args(["review", "--pr", "0"])
+
+    def test_agent_backend_prints_structured_review_result(self) -> None:
+        stdout = io.StringIO()
+        selected: list[str] = []
+
+        def agent_factory(backend: str) -> StaticAgentRunner:
+            selected.append(backend)
+            return StaticAgentRunner()
+
+        result = run(
+            [
+                "review",
+                "--repository",
+                CONTEXT.repository,
+                "--pr",
+                CONTEXT.pr_id,
+                "--agent",
+                "codex",
+            ],
+            environ={},
+            stdout=stdout,
+            adapter_factory=lambda repository, token: StaticAdapter(),
+            agent_runner_factory=agent_factory,
+        )
+
+        self.assertEqual(result, 0)
+        self.assertEqual(selected, ["codex"])
+        parsed = ReviewResult.from_json(stdout.getvalue())
+        self.assertEqual(parsed.head_sha, CONTEXT.head_sha)
+        self.assertEqual(parsed.findings, ())
+
+    def test_unsupported_backend_returns_clear_error(self) -> None:
+        stderr = io.StringIO()
+
+        result = run(
+            [
+                "review",
+                "--repository",
+                CONTEXT.repository,
+                "--pr",
+                CONTEXT.pr_id,
+                "--agent",
+                "claude",
+            ],
+            environ={},
+            stderr=stderr,
+            adapter_factory=lambda repository, token: StaticAdapter(),
+        )
+
+        self.assertEqual(result, 1)
+        self.assertIn("unsupported agent backend: claude", stderr.getvalue())
 
 
 if __name__ == "__main__":

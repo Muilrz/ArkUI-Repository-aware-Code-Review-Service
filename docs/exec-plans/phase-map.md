@@ -43,7 +43,7 @@ R0 的 `Completed` 是已验收实现事实；“route superseded”表示它不
 
 ## 5. M1 — GitCode Minimal Integration
 
-**Status:** In Progress
+**Status:** Completed
 
 **Definition of Done:**
 
@@ -51,11 +51,13 @@ R0 的 `Completed` 是已验收实现事实；“route superseded”表示它不
 2. `arkui-review review --pr <PR_ID>` 能读取并打印绑定真实 head revision 的 PR context。
 3. 具备发布 PR summary comment 所需的最小 write boundary，不扩展 issue、release、merge、webhook 或复杂 reviewer 管理。
 
-## 6. M2 — Codex Review Runner
+## 6. M2 — Code Agent Review Runner
+
+**Status:** Completed
 
 **Definition of Done:**
 
-1. PR context 可输入非交互 Codex 并返回符合明确 JSON schema 的 structured review result。
+1. PR context 可输入通用 Code Agent boundary；Codex 作为首个已验证 backend，通过非交互调用返回符合明确 JSON schema 的 structured review result。
 2. Agent failure、invalid output 与成功 zero findings 有稳定且不同的结果。
 3. Runner 保留目标 repository revision 和必要 diagnostics，不要求 inline comment。
 
@@ -96,6 +98,6 @@ R0 的 `Completed` 是已验收实现事实；“route superseded”表示它不
 
 ## 11. Dependency and execution rules
 
-默认交付顺序为 `M0 → M1 → M2 → M3 → M4 → M5 → M6`。当前 active plan 是 [`active/Fast-MVP-code-review.md`](active/Fast-MVP-code-review.md)，M0 已完成，当前 milestone 为 M1，状态为 `In Progress`。
+默认交付顺序为 `M0 → M1 → M2 → M3 → M4 → M5 → M6`。当前 active plan 是 [`active/Fast-MVP-code-review.md`](active/Fast-MVP-code-review.md)，M0/M1/M2 已完成；M3 保持 `Not Started`，尚未开始。
 
 Status 统一使用 `Not Started`、`In Progress`、`Blocked`、`Completed`、`Superseded`。开始实现时只将所选 milestone 设为 `In Progress`；只有 Acceptance Criteria 与必需验证全部通过才能标记 `Completed`。本次路线切换是纯文档修改，不表示 M0 已开始。
