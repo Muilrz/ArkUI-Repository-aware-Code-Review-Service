@@ -140,6 +140,33 @@ class CodexAgentRunnerTests(unittest.TestCase):
         self.assertNotIn("GITCODE_TOKEN", process.environment or {})
         properties = process.schema["properties"]  # type: ignore[index]
         self.assertEqual(properties["head_sha"]["enum"], [REQUEST.head_sha])
+        self.assertEqual(properties["degraded"]["enum"], [False])
+        self.assertEqual(properties["provider_statuses"]["enum"], [[]])
+        self.assertEqual(properties["provider_statuses"]["minItems"], 0)
+        self.assertEqual(properties["provider_statuses"]["maxItems"], 0)
+        self.assertIn("No knowledge providers exist", process.stdin or "")
+        self.assertIn("provider_statuses must be []", process.stdin or "")
+
+    def test_diff_only_agent_cannot_add_provider_status(self) -> None:
+        payload = json.loads(result_payload())
+        payload["degraded"] = True
+        payload["provider_statuses"] = [
+            {
+                "provider": "live_source",
+                "status": "ready",
+                "revision": REQUEST.head_sha,
+                "version": None,
+                "diagnostics": [],
+            }
+        ]
+        process = FakeProcessRunner(
+            ProcessResult(0, event_stream(json.dumps(payload)), "")
+        )
+
+        with self.assertRaises(CodeAgentError) as captured:
+            runner(process).review(REQUEST)
+
+        self.assertIn("provider_statuses", captured.exception.reason)
 
     def test_valid_finding_maps_to_unified_review_result(self) -> None:
         finding = {
@@ -297,6 +324,49 @@ class CodexAgentRunnerTests(unittest.TestCase):
                 self.assertIn("docs/kb_search.py", process.stdin or "")
                 self.assertTrue(result.degraded)
                 self.assertEqual(result.provider_statuses, statuses)
+                schema_properties = process.schema["properties"]  # type: ignore[index]
+                self.assertEqual(schema_properties["degraded"]["enum"], [True])
+                self.assertEqual(
+                    schema_properties["provider_statuses"]["enum"],
+                    [[item.to_dict() for item in statuses]],
+                )
+                self.assertEqual(
+                    schema_properties["provider_statuses"]["minItems"],
+                    len(statuses),
+                )
+                self.assertEqual(
+                    schema_properties["provider_statuses"]["maxItems"],
+                    len(statuses),
+                )
+
+                mismatched_payload = dict(payload)
+                mismatched_payload["provider_statuses"] = [
+                    *payload["provider_statuses"],
+                    {
+                        "provider": "agent_added",
+                        "status": "ready",
+                        "revision": REQUEST.head_sha,
+                        "version": None,
+                        "diagnostics": [],
+                    },
+                ]
+                mismatched = FakeProcessRunner(
+                    ProcessResult(
+                        0,
+                        event_stream(
+                            json.dumps(mismatched_payload),
+                            commands=(
+                                "python docs/kb_search.py Gesture --detail",
+                                "git rev-parse HEAD",
+                                "rg IsEscapedToManager frameworks/core",
+                            ),
+                        ),
+                        "",
+                    )
+                )
+                with self.assertRaises(CodeAgentError) as captured:
+                    runner(mismatched).review(request)
+                self.assertIn("provider_statuses", captured.exception.reason)
 
                 missing_docs = FakeProcessRunner(
                     ProcessResult(

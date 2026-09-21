@@ -22,6 +22,8 @@ M2 不读取 target repository、不调用 web、Docs KB、P1/P2 或 Skill。Dif
 
 Agent interchange JSON 必须包含 `status=success`、repository、PR id、base/head SHA、degraded、provider statuses 和 findings。Identity 必须与 request 完全一致。每个 finding 必须属于 changed files，并提供 line、category、severity、title、evidence、explanation、recommendation 和 confidence；adapter 将其转换为既有 `ReviewFinding`，最终返回统一 `ReviewResult`。M2 diff-only mode 的 provider statuses 为空且 `degraded=false`；M3 扩展的 repository-aware evidence contract 见对应 spec。
 
+`degraded` 和 `provider_statuses` 是 service preflight 的确定性事实，不由 Agent 推断。Diff-only schema 固定 `degraded=false`、`provider_statuses=[]`；repository-aware schema 绑定 preflight 的完整状态序列。Parser/domain 继续执行相同的 identity/status 校验作为防御边界。
+
 `findings: []` 是成功完成且没有充分证据 finding。可执行文件不存在、启动失败、timeout、non-zero exit、空 stdout、invalid JSON、invalid schema 或 identity mismatch 均抛 `CodeAgentError`，不能转换成 zero findings。stderr 不进入公开错误消息或结构化结果。
 
 ## CLI
