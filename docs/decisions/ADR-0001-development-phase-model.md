@@ -1,9 +1,9 @@
 # ADR-0001: Development Phase and Milestone Model
 
-- **Status:** Accepted; phase catalog amended by [ADR-0005](ADR-0005-code-review-service-pivot.md)
+- **Status:** Accepted; phase catalog currently defined by the [Fast-MVP Phase Map](../exec-plans/phase-map.md)
 - **Date:** 2026-09-01
 
-> Phase → Milestone → Codex Task 的管理模型继续有效。本文的旧 P3–P6 产品阶段目录是历史记录；当前产品阶段为 R0–R6，以 ADR-0005 和 `docs/exec-plans/phase-map.md` 为准。
+> Phase → Milestone → Codex Task 的管理模型继续有效。本文的旧 P3–P6 与后续 R0–R6 路线均作为历史记录；当前产品阶段为 Fast-MVP M0–M6，以 `docs/architecture/technical-roadmap.md` 和 `docs/exec-plans/phase-map.md` 为准。
 
 ## Context
 

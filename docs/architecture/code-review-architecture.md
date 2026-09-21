@@ -1,5 +1,7 @@
 # Code Review Service Architecture
 
+> **Route status:** 本文保留原完整 Code Review Service/MCP 架构作为历史设计与 MVP 后候选参考。当前执行路线是 [Fast-MVP](technical-roadmap.md)，不以实现本文全部组件为当前 Definition of Done。
+
 ## 1. Purpose
 
 本文定义项目的核心业务架构：独立 Repository-aware Code Review Service。第一目标平台是 GitCode，第一阶段聚焦 Pull Request/diff 的 Stability、Memory / Resource / Lifetime 和 Functional Correctness review。

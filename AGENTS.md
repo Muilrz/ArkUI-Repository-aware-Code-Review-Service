@@ -1,6 +1,6 @@
 # ArkUI Repository-aware Code Review Service
 
-本项目面向 OpenHarmony ArkUI Ace Engine，构建独立的 **Repository-aware Code Review Service**、**Repository Knowledge Service**、**MCP Server** 与供外部 Agent 使用的 **Code Review Skill**。系统不建设通用 Agent Runtime；自动轮询、review state、知识更新和结果持久化属于 Service，不属于 Skill 或外部 Agent。
+本项目面向 OpenHarmony ArkUI Ace Engine，当前以 **Fast-MVP — GitCode ArkUI Automated Code Review** 为执行主线，优先复用 GitCode API/MCP、Codex CLI 和现成工具，交付轻量 `arkui-review` CLI/service 与供 Code Agent 使用的 Review Skill。系统不建设通用 Agent Runtime，也不自行建设完整 MCP Server；自动轮询、review state、知识更新和结果持久化属于轻量 service/CLI，不属于 Skill 或外部 Agent。
 
 ## Source of Truth
 
@@ -54,49 +54,45 @@
 - P3-A～E：已完成 contract 继续保留为当前实现事实
 - 原 P3 后续路线：`Superseded`；不继续开发 P3-F incremental lifecycle、P4 Agent Runtime 或旧 P5 Engineering Agent 路线
 
-新的产品开发路线使用独立编号：
+R0 — Review Service Foundation 已完成，计划和 specs 继续记录已实现事实并可被复用。原完整自研 R0–R6 Service/MCP 路线不再作为当前执行主线；R1–R6 为 `Superseded by Fast-MVP route`，不得继续按旧顺序实施或标记 Completed。
 
-- R0 — Review Service Foundation
-- R1 — GitCode Integration & Review State
-- R2 — Repository Knowledge Service
-- R3 — Review Engine
-- R4 — MCP Server
-- R5 — Auto Review & Code Review Skill
-- R6 — Evaluation & Hardening
+当前 active route：`Fast-MVP — GitCode ArkUI Automated Code Review`：
 
-R0 已完成，计划保存在 `docs/exec-plans/completed/R0-review-service-foundation.md`。当前 active plan 是 `docs/exec-plans/active/R1-gitcode-integration-review-state.md`，所有 R1 milestones 均为 `Not Started`；只有任务明确选择相应 milestone 后才开始实现，不得提前进入 R2+。
+- M0 — Fast-MVP Foundation & External Tool Smoke
+- M1 — GitCode Minimal Integration
+- M2 — Codex Review Runner
+- M3 — ArkUI Knowledge & Review Skill
+- M4 — GitCode Review Publishing
+- M5 — Auto Polling & Knowledge Refresh
+- M6 — Demo Validation & Hardening
+
+当前 active plan 是 `docs/exec-plans/active/Fast-MVP-code-review.md`，当前实施入口为 M0，状态为 `Not Started`。只有明确 coding task 才将对应 milestone 改为 `In Progress`，不得因路线切换文档提前实现产品代码。
 
 ## Core Architecture Boundaries
 
-### Code Review Service
+### Fast-MVP components
 
-- Review identity 至少为 `repository + pr_id + head_sha + review_policy_version`。
-- `GitCodeProvider` 隔离平台私有 API；Review Engine 不依赖 GitCode schema。
-- PR Poller / Scheduler、review user filter、head SHA dedup、Review Job Manager 和 Result Store 都属于 Service。
-- 第一阶段重点 review category 为 Stability、Memory / Resource / Lifetime、Functional Correctness。
-- Review 允许成功地产生 zero findings；无证据不得制造 finding。
+- `GitCode minimal adapter` 隔离平台私有 API；优先复用现成 GitCode API/MCP，只实现 PR metadata/diff 读取与 summary comment 发布所需能力。
+- lightweight poller/service 负责 polling interval、repository、author whitelist、head SHA dedup、review 调用、publish 和 state persistence。
+- Codex runner 使用非交互 Codex CLI，并以明确 JSON/schema 区分 structured success、zero findings 和 Agent failure。
+- `skills/arkui-code-review/` 指导 Codex/其他 Code Agent 获取 ArkUI 上下文和执行 review，不承担 polling、scheduler、dedup、credentials 或持久化。
+- structured result 由 formatter 转成 GitCode PR summary comment；第一版不要求精确 inline comment。
+- 系统不建设 generic Agent Runtime，不自行建设完整 MCP Server；允许调用第三方 GitCode MCP 或其他现成工具。
 
-### Repository Knowledge Service
+### Knowledge and evidence
 
-Repository Knowledge 是 provider-based service，不要求维护统一 `KnowledgeSnapshot` 或 generation：
+- Docs KB / `kb_search` 与 Live Source 是 MVP 必选；Live Source 使用目标 repository revision 的 Git、filesystem 和 `rg`，是源码事实的最终 source of truth。
+- P1 继续提供 symbol / definition / references / callers / callees / tests；P2 继续提供 ArkUI-specific semantic relations，二者均为 optional enhancement。
+- P1/P2 stale、unavailable 或 refresh 失败时不得阻塞 review；必须能以 `Docs KB + Live Source` degraded review。旧 revision 的 P1/P2 facts 不能作为当前 revision 的确定事实。
+- knowledge status 应按来源报告 revision、ready/stale/unavailable/error 和必要 diagnostics；不得以统一 snapshot readiness 作为 review 的硬门槛。
+- 第一阶段 review category 为 Stability、Memory / Resource / Lifetime、Functional Correctness。Review 允许成功地产生 zero findings；无足够源码证据不得制造 finding。
 
-- `DocsKbProvider`：ArkUI docs/kb、`context_registry`、`kb_search`，提供架构、组件和领域知识。
-- `LiveSourceProvider`：`rg` / Git / filesystem，读取当前 PR revision 的真实源码，是源码事实的最终 source of truth。
-- `P1Provider`：复用 P1 symbol / definition / reference / caller / callee / tests。
-- `P2Provider`：复用 P2 ArkUI-specific framework semantic relations。
+### Automation and identity
 
-P1/P2 stale、unavailable 或 refresh 失败时不得阻塞 review；Review 必须可降级为 `Docs + Live Source`。旧 revision 的 P1/P2 facts 不能作为当前 revision 的确定事实。
-
-Freshness 以 provider 为单位报告，至少包含目标 `repository_revision` 以及每个 provider 的 `status`、`revision` 和必要 diagnostics。允许 provider 分别 refresh；不得以统一 snapshot readiness 作为 review 的硬门槛。
-
-未来可以增加 `SemanticMcpProvider`，但当前架构、contract、测试和可用性不能依赖它。
-
-### MCP and Skill
-
-- MCP Server 只是 Code Review Service 与 Repository Knowledge Service 的标准接口层，不实现 planning、agent loop、长期 memory 或通用 Agent Runtime。
-- Code Review Skill 只告诉 Codex、Claude 或其他 Agent 如何组合 MCP tools，不能承载 polling、scheduler、dedup、知识持久化或 review result storage。
-- 自动检视固定属于 Service：`Scheduler → GitCodeProvider → author filter → head SHA dedup → review → persist`。
-- 外部 Agent 可消费 MCP，但 Service 的正确性和自动检视生命周期不依赖外部 Agent 自己维持后台循环。
+- 自动检视固定属于 lightweight service/CLI：`poll → GitCode adapter → author filter → head SHA dedup → review → publish → persist`。
+- MVP review identity 至少为 `repository + pr_id + head_sha`；若复用 R0 `review_policy_version`，可以继续保留。
+- MVP state 使用简单 JSON 或 SQLite；不引入 Redis、Celery、Kafka 或 distributed queue。
+- 支持 manual knowledge update/status 和每日 refresh；P1/P2 refresh 可失败并降级，Live Source 无法准备到目标 revision 时不得伪装成功。
 
 ### Historical P1/P2/P3 Contracts
 

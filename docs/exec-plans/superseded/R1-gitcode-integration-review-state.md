@@ -1,18 +1,22 @@
 # R1 — GitCode Integration & Review State
 
-- **Phase Status:** Not Started
-- **Planning Status:** Active
-- **Current implementation milestone:** None; planning only
+- **Phase Status:** Superseded
+- **Planning Status:** Superseded
+- **Superseded by:** [Fast-MVP — GitCode ArkUI Automated Code Review](../active/Fast-MVP-code-review.md)
+- **Superseded reason:** Superseded by Fast-MVP GitCode automated review route
+- **Current implementation milestone:** None; all R1 milestones remained Not Started
 - **Depends on:** completed R0 Review Service Foundation
 - **Architecture:** [Technical Roadmap](../../architecture/technical-roadmap.md), [Code Review Architecture](../../architecture/code-review-architecture.md)
-- **Phase boundary:** [Phase Map §5](../phase-map.md#5-r1--gitcode-integration--review-state)
+- **Historical route status:** [Phase Map historical phases and superseded routes](../phase-map.md#3-historical-phases-and-superseded-routes)
 - **Foundation contracts:** [R0 completed plan](../completed/R0-review-service-foundation.md), [Review Service specs](../../specs/review-service/README.md)
 
 ## Goal
 
+> **Superseded by Fast-MVP GitCode automated review route.** 本计划未开始实现，因此没有标记 Completed。以下内容保留原 R1 设计、范围与所有 milestone 的 `Not Started` 历史状态，不得从本文件继续开发。
+
 可靠地把 GitCode Pull Request 的 metadata 与 exact revision change 转换为 R0 已冻结的 `ReviewIdentity` / `ReviewRequest`，在 review user filter 后以 durable atomic claim 管理重复提交、失败、重试和重启恢复，并提供不依赖 Review Engine 的手动 `review_pr` ingestion path。
 
-本文只规划 R1。创建本计划不表示任何 R1 产品能力已经实现；只有明确任务选择一个 milestone 后，才能把该 milestone 改为 `In Progress` 并修改产品代码。
+本文原只规划 R1，且没有任何 R1 milestone 开始实现。路线切换后不得再从本计划选择 milestone；当前工作必须遵循 Fast-MVP active plan。
 
 ## In scope
 

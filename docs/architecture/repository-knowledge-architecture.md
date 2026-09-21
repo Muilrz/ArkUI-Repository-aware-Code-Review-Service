@@ -1,5 +1,7 @@
 # Repository Knowledge Service Architecture
 
+> **Route status:** 本文保留原完整 Repository Knowledge Service 设计作为历史参考。当前 Fast-MVP 只要求 Docs KB + Live Source，并将 P1/P2 作为 optional enhancement；当前边界以 [Technical Roadmap](technical-roadmap.md) 为准。
+
 ## Purpose
 
 本文定义 Code Review Service 使用的 provider-based Repository Knowledge Service。最高层方向以 [Technical Roadmap](technical-roadmap.md) 为准；本文件只展开 provider、freshness、evidence、query、update/rebuild 和 degradation 边界。

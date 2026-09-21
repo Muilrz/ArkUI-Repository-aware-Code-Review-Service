@@ -1,9 +1,11 @@
 # ADR-0005: Pivot to an Independent Code Review Service
 
-- **Status:** Accepted
+- **Status:** Accepted historical direction; R0–R6 execution route superseded by the [Fast-MVP Technical Roadmap](../architecture/technical-roadmap.md)
 - **Date:** 2026-09-13
 - **Supersedes:** [ADR-0003](ADR-0003-multi-capability-engineering-agent.md), [ADR-0004](ADR-0004-incremental-repository-knowledge.md)
 - **Amends:** [ADR-0001](ADR-0001-development-phase-model.md) phase catalog while retaining its Phase → Milestone → Codex Task management model
+
+> 本 ADR 对“不建设 generic Agent Runtime”、provider degradation 和历史 R0 foundation 的决定继续有效；完整自研 Service/MCP 的 R1–R6 执行顺序已由 Fast-MVP M0–M6 取代。
 
 ## Context
 

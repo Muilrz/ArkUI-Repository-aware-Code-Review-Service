@@ -2,14 +2,14 @@
 
 - **Phase Status:** Superseded
 - **Status when superseded:** P3-A～E Completed；P3-F1 In Progress；F2～F6/G/H/I Not Started
-- **Superseded by:** [ADR-0005](../../decisions/ADR-0005-code-review-service-pivot.md) and the [R0–R6 phase map](../phase-map.md)
+- **Superseded by:** [ADR-0005](../../decisions/ADR-0005-code-review-service-pivot.md); the later R0–R6 execution route was itself superseded by the [Fast-MVP phase map](../phase-map.md)
 - **Historical Phase Goal:** 在 P1/P2 之上建立 dependency-driven incremental Repository Knowledge lifecycle，并将自然语言/结构化 Task 或平台无关 Change 转换为版本可追溯、证据充分且满足 token budget 的结构化 Context Pack。
 - **Current Source of Truth:** [Technical roadmap](../../architecture/technical-roadmap.md)
 - **Historical Phase Boundary:** [Phase map historical phases](../phase-map.md#3-historical-phases)
 - **Dependencies:** [P1 completed plan](../completed/P1-repository-intelligence.md)、[P2 completed plan](../completed/P2-arkui-code-graph.md)、[P2 specs](../../specs/code-graph/README.md)。
 - **Evaluation inputs:** [P1 baseline](../../evaluation/p1-retrieval-baseline.md)、[P2 baseline](../../evaluation/p2-code-graph-baseline.md)。冻结 expected 保持在既有 fixtures 中。
 
-> 本计划未完成，因此没有标记 Completed。A～E 的完成状态和对应 specs/evaluation 继续是历史事实；F1 及其后续 milestone 已停止，不得从本文件继续开发。旧代码和文档保留，是否由 R 路线复用须在新的 active plan 中明确决定。
+> 本计划未完成，因此没有标记 Completed。A～E 的完成状态和对应 specs/evaluation 继续是历史事实；F1 及其后续 milestone 已停止，不得从本文件继续开发。旧代码和文档保留，是否由 Fast-MVP 复用须在当前 active plan 中明确决定。
 
 ## Historical authority and planning decisions
 
