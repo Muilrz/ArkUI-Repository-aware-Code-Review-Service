@@ -31,6 +31,7 @@ from .errors import (
 from .gitcode import GitCodeProvider
 from .knowledge import KnowledgeGateway
 from .models import KnowledgeBundle
+from .publishing import SummaryCommentPublisher
 from .result_store import ResultStore
 from .review_knowledge import ReviewKnowledgeProvider
 
@@ -61,5 +62,6 @@ __all__ = [
     "ReviewServiceConfig",
     "ReviewServiceError",
     "SecretValue",
+    "SummaryCommentPublisher",
     "classify_review_failure",
 ]

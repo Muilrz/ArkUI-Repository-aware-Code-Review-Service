@@ -13,7 +13,7 @@ from arkui_agent.review_service.domain import (
     ReviewResult,
     ReviewResultStatus,
 )
-from arkui_agent.review_service.ports import SecretValue
+from arkui_agent.review_service.ports import GitCodeProviderError, SecretValue
 
 
 CONTEXT = PullRequestContext(
@@ -29,10 +29,20 @@ CONTEXT = PullRequestContext(
 
 
 class StaticAdapter:
+    def __init__(self, *, publish_error: bool = False) -> None:
+        self.publish_error = publish_error
+        self.published: list[tuple[str, str]] = []
+
     def get_pr_context(self, pr_id: int) -> PullRequestContext:
         if str(pr_id) != CONTEXT.pr_id:
             raise AssertionError("unexpected PR id")
         return CONTEXT
+
+    def post_summary_comment(self, pr_id: str | int, body: str) -> str:
+        if self.publish_error:
+            raise GitCodeProviderError("comment endpoint rejected the request")
+        self.published.append((str(pr_id), body))
+        return "comment-42"
 
 
 class StaticAgentRunner:
@@ -215,6 +225,114 @@ class FastMvpCliTests(unittest.TestCase):
         self.assertEqual(result, 0)
         self.assertIsNotNone(runner.last_request)
         self.assertEqual(runner.last_request.knowledge.provider_statuses, statuses)
+
+    def test_agent_review_without_publish_never_calls_write_api(self) -> None:
+        adapter = StaticAdapter(publish_error=True)
+
+        result = run(
+            [
+                "review",
+                "--repository",
+                CONTEXT.repository,
+                "--pr",
+                CONTEXT.pr_id,
+                "--agent",
+                "codex",
+            ],
+            environ={},
+            stdout=io.StringIO(),
+            adapter_factory=lambda repository, token: adapter,
+            agent_runner_factory=lambda backend: StaticAgentRunner(),
+        )
+
+        self.assertEqual(result, 0)
+        self.assertEqual(adapter.published, [])
+
+    def test_publish_posts_to_requested_pr_only_with_explicit_opt_in(self) -> None:
+        adapter = StaticAdapter()
+        stdout = io.StringIO()
+        secret = "private-token-value"
+
+        result = run(
+            [
+                "review",
+                "--repository",
+                CONTEXT.repository,
+                "--pr",
+                CONTEXT.pr_id,
+                "--agent",
+                "codex",
+                "--publish",
+            ],
+            environ={"GITCODE_TOKEN": secret},
+            stdout=stdout,
+            adapter_factory=lambda repository, token: adapter,
+            agent_runner_factory=lambda backend: StaticAgentRunner(),
+        )
+
+        self.assertEqual(result, 0)
+        self.assertEqual(len(adapter.published), 1)
+        pr_id, body = adapter.published[0]
+        self.assertEqual(pr_id, CONTEXT.pr_id)
+        self.assertIn("No issues with sufficient evidence were found", body)
+        self.assertNotIn(secret, body)
+        self.assertIn("published_comment_id: comment-42", stdout.getvalue())
+        self.assertNotIn(secret, stdout.getvalue())
+
+    def test_publish_failure_is_not_reported_as_review_success(self) -> None:
+        stdout = io.StringIO()
+        stderr = io.StringIO()
+
+        result = run(
+            [
+                "review",
+                "--repository",
+                CONTEXT.repository,
+                "--pr",
+                CONTEXT.pr_id,
+                "--agent",
+                "codex",
+                "--publish",
+            ],
+            environ={"GITCODE_TOKEN": "private-token-value"},
+            stdout=stdout,
+            stderr=stderr,
+            adapter_factory=lambda repository, token: StaticAdapter(
+                publish_error=True
+            ),
+            agent_runner_factory=lambda backend: StaticAgentRunner(),
+        )
+
+        self.assertEqual(result, 1)
+        self.assertEqual(stdout.getvalue(), "")
+        self.assertIn("GitCode provider failed", stderr.getvalue())
+
+    def test_publish_requires_agent_before_reading_pr(self) -> None:
+        factory_called = False
+
+        def factory(repository: str, token: SecretValue | None) -> StaticAdapter:
+            nonlocal factory_called
+            factory_called = True
+            return StaticAdapter()
+
+        stderr = io.StringIO()
+        result = run(
+            [
+                "review",
+                "--repository",
+                CONTEXT.repository,
+                "--pr",
+                CONTEXT.pr_id,
+                "--publish",
+            ],
+            environ={},
+            stderr=stderr,
+            adapter_factory=factory,
+        )
+
+        self.assertEqual(result, 1)
+        self.assertFalse(factory_called)
+        self.assertIn("--publish requires --agent", stderr.getvalue())
 
 
 if __name__ == "__main__":

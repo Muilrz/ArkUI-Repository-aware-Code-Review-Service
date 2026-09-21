@@ -1,7 +1,7 @@
 # Fast-MVP — GitCode ArkUI Automated Code Review
 
 - **Route Status:** Active
-- **Current milestone:** M3 — ArkUI Knowledge & Review Skill
+- **Current milestone:** M4 — GitCode Review Publishing
 - **Current milestone status:** In Progress
 - **Supersedes:** incomplete R1–R6 complete Service/MCP route
 - **Reuses:** completed P0/P1/P2, P3-A～E contracts, and R0 Review Service Foundation where useful
@@ -117,13 +117,13 @@ Structured result 至少表达 status、repository/PR/base/head identity、provi
 
 ### M3 — ArkUI Knowledge & Review Skill
 
-- **Status:** In Progress
+- **Status:** Completed
 - **Scope:** 建立 `skills/arkui-code-review/`，指导 diff/context、Docs KB、Live Source、optional P1/P2 和三类 review。
 - **Acceptance:** Docs KB + Live Source 可独立完成 degraded review；stale P1/P2 不被当作当前确定事实；无证据不产生 finding。
 
 ### M4 — GitCode Review Publishing
 
-- **Status:** Not Started
+- **Status:** In Progress
 - **Scope:** structured result → formatter → one GitCode PR summary comment。
 - **Acceptance:** finding 包含所需字段；zero-findings success 有明确摘要；publish failure 不写成功状态。
 

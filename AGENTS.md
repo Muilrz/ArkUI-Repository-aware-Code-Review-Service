@@ -66,7 +66,7 @@ R0 — Review Service Foundation 已完成，计划和 specs 继续记录已实�
 - M5 — Auto Polling & Knowledge Refresh
 - M6 — Demo Validation & Hardening
 
-当前 active plan 是 `docs/exec-plans/active/Fast-MVP-code-review.md`。M0/M1/M2 已完成；当前实施 milestone 为 M3，状态为 `In Progress`；不得提前开始 M4+。
+当前 active plan 是 `docs/exec-plans/active/Fast-MVP-code-review.md`。M0–M3 已完成；当前实施 milestone 为 M4，状态为 `In Progress`；不得提前开始 M5+。
 
 ## Core Architecture Boundaries
 

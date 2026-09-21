@@ -7,11 +7,14 @@ from .agent_review import (
 )
 from .job_manager import ReviewJobManager
 from .knowledge import ReviewKnowledgeFacade
+from .publishing import ReviewPublishingService, format_review_summary
 
 __all__ = [
     "CodeAgentReviewService",
     "ReviewJobManager",
     "ReviewKnowledgeFacade",
+    "ReviewPublishingService",
     "build_agent_output_schema",
     "build_diff_review_prompt",
+    "format_review_summary",
 ]

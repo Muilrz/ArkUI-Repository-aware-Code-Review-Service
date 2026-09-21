@@ -63,7 +63,7 @@ R0 的 `Completed` 是已验收实现事实；“route superseded”表示它不
 
 ## 7. M3 — ArkUI Knowledge & Review Skill
 
-**Status:** In Progress
+**Status:** Completed
 
 **Definition of Done:**
 
@@ -72,6 +72,8 @@ R0 的 `Completed` 是已验收实现事实；“route superseded”表示它不
 3. Docs KB + Live Source 可独立完成 degraded review；stale P1/P2 不会产生当前 revision 的确定 claim。
 
 ## 8. M4 — GitCode Review Publishing
+
+**Status:** In Progress
 
 **Definition of Done:**
 
@@ -100,6 +102,6 @@ R0 的 `Completed` 是已验收实现事实；“route superseded”表示它不
 
 ## 11. Dependency and execution rules
 
-默认交付顺序为 `M0 → M1 → M2 → M3 → M4 → M5 → M6`。当前 active plan 是 [`active/Fast-MVP-code-review.md`](active/Fast-MVP-code-review.md)，M0/M1/M2 已完成；当前 milestone 为 M3，状态为 `In Progress`。
+默认交付顺序为 `M0 → M1 → M2 → M3 → M4 → M5 → M6`。当前 active plan 是 [`active/Fast-MVP-code-review.md`](active/Fast-MVP-code-review.md)，M0–M3 已完成；当前 milestone 为 M4，状态为 `In Progress`。
 
 Status 统一使用 `Not Started`、`In Progress`、`Blocked`、`Completed`、`Superseded`。开始实现时只将所选 milestone 设为 `In Progress`；只有 Acceptance Criteria 与必需验证全部通过才能标记 `Completed`。本次路线切换是纯文档修改，不表示 M0 已开始。

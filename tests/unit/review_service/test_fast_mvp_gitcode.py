@@ -214,6 +214,23 @@ class GitCodeRestAdapterTests(unittest.TestCase):
 
         self.assertEqual(transport.requests, [])
 
+    def test_comment_http_failure_is_explicit_and_redacts_secret(self) -> None:
+        secret = "private-token-value"
+        adapter = GitCodeRestAdapter(
+            repository=REPOSITORY,
+            access_token=SecretValue(secret),
+            transport=FakeHttpTransport(
+                [HttpResponse(status=403, body=secret.encode("utf-8"))]
+            ),
+        )
+
+        with self.assertRaises(GitCodeProviderError) as raised:
+            adapter.post_summary_comment(PR_ID, "review summary")
+
+        self.assertIn("403", raised.exception.reason)
+        self.assertNotIn(secret, raised.exception.reason)
+        self.assertNotIn(secret, str(raised.exception))
+
 
 if __name__ == "__main__":
     unittest.main()

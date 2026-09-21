@@ -17,6 +17,7 @@ from .adapters import (
 )
 from .application import (
     CodeAgentReviewService,
+    ReviewPublishingService,
     ReviewKnowledgeFacade,
     build_agent_output_schema,
     build_diff_review_prompt,
@@ -28,6 +29,10 @@ from .ports import CodeAgentRunner, ReviewServiceError, SecretValue
 class PullRequestContextReader(Protocol):
     def get_pr_context(self, pr_id: str | int) -> PullRequestContext:
         """Return one revision-bound PR context."""
+        ...
+
+    def post_summary_comment(self, pr_id: str | int, body: str) -> str:
+        """Publish one summary comment and return its platform identifier."""
         ...
 
 
@@ -43,7 +48,7 @@ def build_parser() -> argparse.ArgumentParser:
     subparsers = parser.add_subparsers(dest="command", required=True)
     review = subparsers.add_parser(
         "review",
-        help="read and print one GitCode pull request context",
+        help="read a GitCode PR and optionally run or publish a review",
     )
     review.add_argument(
         "--repository",
@@ -62,6 +67,11 @@ def build_parser() -> argparse.ArgumentParser:
     review.add_argument(
         "--repository-root",
         help="target Git worktree at the PR head; defaults to ARKUI_REPO_ROOT",
+    )
+    review.add_argument(
+        "--publish",
+        action="store_true",
+        help="explicitly publish the formatted review as one GitCode PR comment",
     )
     return parser
 
@@ -85,12 +95,16 @@ def run(
     repository = args.repository or environment.get("GITCODE_REPOSITORY")
     if not repository:
         parser.error("--repository or GITCODE_REPOSITORY is required")
+    if args.publish and args.agent is None:
+        print("error: --publish requires --agent", file=errors)
+        return 1
     token_text = environment.get("GITCODE_TOKEN")
     token = SecretValue(token_text) if token_text else None
     factory = adapter_factory or _create_adapter
 
     try:
-        context = factory(repository, token).get_pr_context(args.pr)
+        adapter = factory(repository, token)
+        context = adapter.get_pr_context(args.pr)
     except (ReviewServiceError, ValueError) as error:
         print(f"error: {error}", file=errors)
         return 1
@@ -112,10 +126,17 @@ def run(
                 context,
                 knowledge=knowledge,
             )
+            comment_id = (
+                ReviewPublishingService(adapter).publish(result)
+                if args.publish
+                else None
+            )
         except (ReviewServiceError, ValueError) as error:
             print(f"error: {error}", file=errors)
             return 1
         _print_review_result(result, output)
+        if comment_id is not None:
+            print(f"published_comment_id: {comment_id}", file=output)
         return 0
 
     print(f"repository: {context.repository}", file=output)
