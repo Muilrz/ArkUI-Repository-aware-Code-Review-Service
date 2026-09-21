@@ -64,7 +64,7 @@
 - R5 — Auto Review & Code Review Skill
 - R6 — Evaluation & Hardening
 
-R0 已完成，计划保存在 `docs/exec-plans/completed/R0-review-service-foundation.md`；当前没有 active plan。R1 或后续阶段必须先建立对应 active plan，并由明确任务启动，不得因 roadmap 已存在而提前实现。
+R0 已完成，计划保存在 `docs/exec-plans/completed/R0-review-service-foundation.md`。当前 active plan 是 `docs/exec-plans/active/R1-gitcode-integration-review-state.md`，所有 R1 milestones 均为 `Not Started`；只有任务明确选择相应 milestone 后才开始实现，不得提前进入 R2+。
 
 ## Core Architecture Boundaries
 

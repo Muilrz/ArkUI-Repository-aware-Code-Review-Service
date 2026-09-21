@@ -25,7 +25,7 @@
 - P1 作为 Repository Knowledge Service 的 `P1Provider` 复用；P2 作为 `P2Provider` 复用。既有 specs、baseline 和 frozen fixtures 保持不变。
 - P3-A～E 已完成，其 `specs/task-change-context/` 与 `evaluation/p3-*` 继续记录已实现行为和验收事实。
 - 未完成的旧 P3 计划已标记 `Superseded` 并移至 [`exec-plans/superseded/P3-task-change-context.md`](exec-plans/superseded/P3-task-change-context.md)。P3-F incremental lifecycle、P4 Agent Runtime 和旧 P5 Engineering Agent 路线不再继续。
-- R0 Review Service Foundation 已完成，计划保存在 [`exec-plans/completed/R0-review-service-foundation.md`](exec-plans/completed/R0-review-service-foundation.md)；当前没有 active plan，R1 尚未开始。
+- R0 Review Service Foundation 已完成，计划保存在 [`exec-plans/completed/R0-review-service-foundation.md`](exec-plans/completed/R0-review-service-foundation.md)。当前 active plan 是 [`exec-plans/active/R1-gitcode-integration-review-state.md`](exec-plans/active/R1-gitcode-integration-review-state.md)；R1 仍为 `Not Started`，计划存在不表示已实现。
 
 ## 当前架构入口
 

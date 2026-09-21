@@ -89,6 +89,10 @@ P3 历史状态详见 [`superseded/P3-task-change-context.md`](superseded/P3-tas
 
 # 5. R1 — GitCode Integration & Review State
 
+**Status:** Not Started
+
+**Active plan:** [`active/R1-gitcode-integration-review-state.md`](active/R1-gitcode-integration-review-state.md)
+
 ## Goal
 
 可靠地把 GitCode PR/revision 转换为平台无关 review work，并持久化 review identity/state，防止同一 head/policy 重复处理。
@@ -328,4 +332,4 @@ Status 统一使用：
 
 开始实现时只将当前 milestone 设为 `In Progress`。只有 Acceptance Criteria 与必需测试全部通过才设为 `Completed`。路线被替代但未完成时设为 `Superseded` 并移至 `superseded/`，不得伪装成完成。
 
-R0 已完成，计划归档于 [`completed/R0-review-service-foundation.md`](completed/R0-review-service-foundation.md)。当前没有 active plan；R1 尚未开始，后续实现必须由新的 active plan 与明确任务启动。
+R0 已完成，计划归档于 [`completed/R0-review-service-foundation.md`](completed/R0-review-service-foundation.md)。当前 active plan 是 [`active/R1-gitcode-integration-review-state.md`](active/R1-gitcode-integration-review-state.md)；R1 仍为 `Not Started`，只有明确 milestone implementation task 才能开始开发。
