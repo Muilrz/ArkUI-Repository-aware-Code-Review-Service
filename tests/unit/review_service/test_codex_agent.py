@@ -34,23 +34,8 @@ REQUEST = AgentReviewRequest(
 def result_payload(
     *,
     findings: list[object] | None = None,
-    degraded: bool = False,
-    provider_statuses: list[object] | None = None,
 ) -> str:
-    return json.dumps(
-        {
-            "status": "success",
-            "repository": REQUEST.repository,
-            "pr_id": REQUEST.pr_id,
-            "base_sha": REQUEST.base_sha,
-            "head_sha": REQUEST.head_sha,
-            "findings": [] if findings is None else findings,
-            "degraded": degraded,
-            "provider_statuses": (
-                [] if provider_statuses is None else provider_statuses
-            ),
-        }
-    )
+    return json.dumps({"findings": [] if findings is None else findings})
 
 
 def event_stream(message: str, *, commands: Sequence[str] = ()) -> str:
@@ -139,17 +124,30 @@ class CodexAgentRunnerTests(unittest.TestCase):
         self.assertNotIn("kb_search", process.stdin or "")
         self.assertNotIn("GITCODE_TOKEN", process.environment or {})
         properties = process.schema["properties"]  # type: ignore[index]
-        self.assertEqual(properties["head_sha"]["enum"], [REQUEST.head_sha])
-        self.assertEqual(properties["degraded"]["enum"], [False])
-        self.assertEqual(properties["provider_statuses"]["enum"], [[]])
-        self.assertEqual(properties["provider_statuses"]["minItems"], 0)
-        self.assertEqual(properties["provider_statuses"]["maxItems"], 0)
+        self.assertEqual(set(properties), {"findings"})
+        self.assertEqual(process.schema["required"], ["findings"])
+        self.assertFalse(process.schema["additionalProperties"])
         self.assertIn("No knowledge providers exist", process.stdin or "")
-        self.assertIn("provider_statuses must be []", process.stdin or "")
+        self.assertIn("Return findings only", process.stdin or "")
+        self.assertEqual(result.repository, REQUEST.repository)
+        self.assertEqual(result.pr_id, REQUEST.pr_id)
+        self.assertEqual(result.base_sha, REQUEST.base_sha)
+        self.assertEqual(result.head_sha, REQUEST.head_sha)
+        self.assertFalse(result.degraded)
+        self.assertEqual(result.provider_statuses, ())
 
-    def test_diff_only_agent_cannot_add_provider_status(self) -> None:
+    def test_agent_cannot_override_service_owned_result_fields(self) -> None:
         payload = json.loads(result_payload())
-        payload["degraded"] = True
+        payload.update(
+            {
+                "status": "failure",
+                "repository": "attacker/repository",
+                "pr_id": "999",
+                "base_sha": "wrong-base",
+                "head_sha": "wrong-head",
+                "degraded": True,
+            }
+        )
         payload["provider_statuses"] = [
             {
                 "provider": "live_source",
@@ -166,7 +164,7 @@ class CodexAgentRunnerTests(unittest.TestCase):
         with self.assertRaises(CodeAgentError) as captured:
             runner(process).review(REQUEST)
 
-        self.assertIn("provider_statuses", captured.exception.reason)
+        self.assertIn("unknown fields", captured.exception.reason)
 
     def test_valid_finding_maps_to_unified_review_result(self) -> None:
         finding = {
@@ -199,6 +197,36 @@ class CodexAgentRunnerTests(unittest.TestCase):
         self.assertEqual(result.findings[0].file, REQUEST.changed_files[0])
         self.assertEqual(result.findings[0].category, "Stability")
         self.assertEqual(result.findings[0].evidence[0].revision, REQUEST.head_sha)
+
+    def test_finding_evidence_validation_remains_strict(self) -> None:
+        finding = {
+            "file": REQUEST.changed_files[0],
+            "line": 10,
+            "category": "stability",
+            "severity": "high",
+            "title": "Unsupported evidence provider",
+            "evidence": [
+                {
+                    "provider": "live_source",
+                    "revision": REQUEST.head_sha,
+                    "source": REQUEST.changed_files[0],
+                    "locator": "line 10",
+                }
+            ],
+            "explanation": "the provider is unavailable in diff-only mode",
+            "recommendation": "use evidence from the supplied diff",
+            "confidence": 0.9,
+        }
+        process = FakeProcessRunner(
+            ProcessResult(
+                0, event_stream(result_payload(findings=[finding])), ""
+            )
+        )
+
+        with self.assertRaises(CodeAgentError) as captured:
+            runner(process).review(REQUEST)
+
+        self.assertIn("agent_diff", captured.exception.reason)
 
     def test_nonzero_exit_is_failure(self) -> None:
         process = FakeProcessRunner(ProcessResult(2, "", "private diagnostics"))
@@ -250,18 +278,6 @@ class CodexAgentRunnerTests(unittest.TestCase):
         with self.assertRaises(CodeAgentError):
             runner(process).review(REQUEST)
 
-    def test_identity_mismatch_is_failure(self) -> None:
-        payload = json.loads(result_payload())
-        payload["head_sha"] = "different"
-        process = FakeProcessRunner(
-            ProcessResult(0, event_stream(json.dumps(payload)), "")
-        )
-
-        with self.assertRaises(CodeAgentError) as captured:
-            runner(process).review(REQUEST)
-
-        self.assertIn("head_sha", captured.exception.reason)
-
     def test_repository_aware_request_uses_worktree_and_provider_statuses(
         self,
     ) -> None:
@@ -299,10 +315,6 @@ class CodexAgentRunnerTests(unittest.TestCase):
                     ),
                 )
                 payload = json.loads(result_payload())
-                payload["degraded"] = True
-                payload["provider_statuses"] = [
-                    item.to_dict() for item in statuses
-                ]
                 process = FakeProcessRunner(
                     ProcessResult(
                         0,
@@ -325,48 +337,15 @@ class CodexAgentRunnerTests(unittest.TestCase):
                 self.assertTrue(result.degraded)
                 self.assertEqual(result.provider_statuses, statuses)
                 schema_properties = process.schema["properties"]  # type: ignore[index]
-                self.assertEqual(schema_properties["degraded"]["enum"], [True])
-                self.assertEqual(
-                    schema_properties["provider_statuses"]["enum"],
-                    [[item.to_dict() for item in statuses]],
+                self.assertEqual(set(schema_properties), {"findings"})
+                self.assertIn(
+                    json.dumps(
+                        [item.to_dict() for item in statuses],
+                        ensure_ascii=False,
+                        sort_keys=True,
+                    ),
+                    process.stdin or "",
                 )
-                self.assertEqual(
-                    schema_properties["provider_statuses"]["minItems"],
-                    len(statuses),
-                )
-                self.assertEqual(
-                    schema_properties["provider_statuses"]["maxItems"],
-                    len(statuses),
-                )
-
-                mismatched_payload = dict(payload)
-                mismatched_payload["provider_statuses"] = [
-                    *payload["provider_statuses"],
-                    {
-                        "provider": "agent_added",
-                        "status": "ready",
-                        "revision": REQUEST.head_sha,
-                        "version": None,
-                        "diagnostics": [],
-                    },
-                ]
-                mismatched = FakeProcessRunner(
-                    ProcessResult(
-                        0,
-                        event_stream(
-                            json.dumps(mismatched_payload),
-                            commands=(
-                                "python docs/kb_search.py Gesture --detail",
-                                "git rev-parse HEAD",
-                                "rg IsEscapedToManager frameworks/core",
-                            ),
-                        ),
-                        "",
-                    )
-                )
-                with self.assertRaises(CodeAgentError) as captured:
-                    runner(mismatched).review(request)
-                self.assertIn("provider_statuses", captured.exception.reason)
 
                 missing_docs = FakeProcessRunner(
                     ProcessResult(

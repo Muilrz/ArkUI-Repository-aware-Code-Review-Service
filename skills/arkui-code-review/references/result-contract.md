@@ -1,21 +1,19 @@
 # Review result contract
 
-Return a structured success only after revision alignment and required tool use succeed.
+Return findings only after revision alignment and required tool use succeed. The
+Review Service owns repository/PR/revision identity and knowledge provider state.
 
-Top-level fields:
+Agent output:
 
 ```json
 {
-  "status": "success",
-  "repository": "owner/repository",
-  "pr_id": "123",
-  "base_sha": "...",
-  "head_sha": "...",
-  "degraded": true,
-  "provider_statuses": [],
   "findings": []
 }
 ```
+
+Do not return `repository`, `pr_id`, `base_sha`, `head_sha`, `degraded`, or
+`provider_statuses`. The service copies those deterministic facts from the review
+request and knowledge preflight when it assembles the final `ReviewResult`.
 
 An empty `findings` array means the review completed without enough evidence for a defect. It is not a substitute for a failed tool call, revision mismatch, or invalid output.
 
@@ -31,4 +29,3 @@ Each finding must contain:
 - confidence from 0 to 1.
 
 At least one evidence reference must be `live_source` at head SHA. Docs KB may support architectural context. P1/P2 evidence is usable only when its provider is ready at head SHA. Do not report style preferences, speculative risks, or issues outside changed behavior.
-

@@ -11,7 +11,6 @@ from ..domain import (
     AgentReviewRequest,
     ProviderEvidenceRef,
     ProviderStatus,
-    ProviderStatusRef,
     ReviewFinding,
     ReviewResult,
     ReviewResultStatus,
@@ -208,29 +207,8 @@ def _parse_agent_result(payload: str, request: AgentReviewRequest) -> ReviewResu
         data = strict_mapping(
             value,
             type_name="AgentReviewResult",
-            required=frozenset(
-                {
-                    "status",
-                    "repository",
-                    "pr_id",
-                    "base_sha",
-                    "head_sha",
-                    "findings",
-                    "degraded",
-                    "provider_statuses",
-                }
-            ),
+            required=frozenset({"findings"}),
         )
-        _validate_identity(data, request)
-        statuses = _parse_provider_statuses(data, request)
-        degraded = data["degraded"]
-        if not isinstance(degraded, bool):
-            raise ValueError("degraded must be a boolean")
-        expected_degraded = any(
-            status.status is not ProviderStatus.READY for status in statuses
-        )
-        if degraded != expected_degraded:
-            raise ValueError("degraded does not match provider statuses")
         raw_findings = data["findings"]
         if isinstance(raw_findings, (str, bytes)) or not isinstance(
             raw_findings, Sequence
@@ -239,6 +217,10 @@ def _parse_agent_result(payload: str, request: AgentReviewRequest) -> ReviewResu
         findings = tuple(_parse_finding(item, request) for item in raw_findings)
     except (TypeError, ValueError) as error:
         raise CodeAgentError(f"Codex output schema is invalid: {error}") from error
+    statuses = (
+        () if request.knowledge is None else request.knowledge.provider_statuses
+    )
+    degraded = False if request.knowledge is None else request.knowledge.degraded
     return ReviewResult(
         status=ReviewResultStatus.SUCCESS,
         repository=request.repository,
@@ -249,36 +231,6 @@ def _parse_agent_result(payload: str, request: AgentReviewRequest) -> ReviewResu
         degraded=degraded,
         provider_statuses=statuses,
     )
-
-
-def _parse_provider_statuses(
-    data: Mapping[str, object], request: AgentReviewRequest
-) -> tuple[ProviderStatusRef, ...]:
-    raw = data["provider_statuses"]
-    if isinstance(raw, (str, bytes)) or not isinstance(raw, Sequence):
-        raise ValueError("provider_statuses must be an array")
-    statuses = tuple(ProviderStatusRef.from_dict(item) for item in raw)
-    expected = (
-        () if request.knowledge is None else request.knowledge.provider_statuses
-    )
-    if statuses != expected:
-        raise ValueError("provider_statuses do not match knowledge preflight")
-    return statuses
-
-
-def _validate_identity(
-    data: Mapping[str, object], request: AgentReviewRequest
-) -> None:
-    expected = {
-        "status": "success",
-        "repository": request.repository,
-        "pr_id": request.pr_id,
-        "base_sha": request.base_sha,
-        "head_sha": request.head_sha,
-    }
-    for field, value in expected.items():
-        if data[field] != value:
-            raise ValueError(f"{field} does not match the review request")
 
 
 def _parse_finding(value: object, request: AgentReviewRequest) -> ReviewFinding:
