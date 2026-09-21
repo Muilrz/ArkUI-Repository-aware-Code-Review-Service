@@ -72,6 +72,7 @@ class CodeAgentRunnerTests(unittest.TestCase):
                 "head_sha",
                 "changed_files",
                 "diff",
+                "knowledge",
             },
         )
         self.assertFalse(any("codex" in name for name in field_names))

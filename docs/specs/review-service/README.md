@@ -13,5 +13,6 @@
 | [R0 foundation traceability](r0-traceability.md) | R0-D | Phase Map R0 Definition of Done 的 spec/implementation/test evidence |
 | [Fast-MVP GitCode PR context and CLI](fast-mvp-gitcode-cli.md) | M0/M1 | GitCode REST read/comment boundary、PR carrier、CLI 与失败语义 |
 | [Fast-MVP Code Agent Review Runner](fast-mvp-code-agent-runner.md) | M2 | 通用 Agent port、Codex backend、structured `ReviewResult` 与失败语义 |
+| [Fast-MVP ArkUI Knowledge and Review Skill](fast-mvp-knowledge-skill.md) | M3 | agent-neutral Skill、revision-bound providers、degraded behavior 与 evidence validation |
 
-除 Fast-MVP M1 GitCode boundary 和 M2 diff-only Code Agent runner 外，Repository Knowledge implementation、result publishing、durable store/dedup、MCP 和 Scheduler 仍未实现，不从 architecture 提前声明为现有能力。
+除 Fast-MVP M1 GitCode boundary、M2 Code Agent runner 与 M3 lightweight knowledge/Skill 外，result publishing、durable store/dedup、MCP、knowledge refresh 和 Scheduler 仍未实现，不从 architecture 提前声明为现有能力。

@@ -11,7 +11,13 @@ from arkui_agent.review_service.application import (
     build_agent_output_schema,
     build_diff_review_prompt,
 )
-from arkui_agent.review_service.domain import AgentReviewRequest, ReviewResultStatus
+from arkui_agent.review_service.domain import (
+    AgentKnowledgeContext,
+    AgentReviewRequest,
+    ProviderStatus,
+    ProviderStatusRef,
+    ReviewResultStatus,
+)
 from arkui_agent.review_service.ports import CodeAgentError
 
 
@@ -25,7 +31,12 @@ REQUEST = AgentReviewRequest(
 )
 
 
-def result_payload(*, findings: list[object] | None = None) -> str:
+def result_payload(
+    *,
+    findings: list[object] | None = None,
+    degraded: bool = False,
+    provider_statuses: list[object] | None = None,
+) -> str:
     return json.dumps(
         {
             "status": "success",
@@ -34,8 +45,36 @@ def result_payload(*, findings: list[object] | None = None) -> str:
             "base_sha": REQUEST.base_sha,
             "head_sha": REQUEST.head_sha,
             "findings": [] if findings is None else findings,
+            "degraded": degraded,
+            "provider_statuses": (
+                [] if provider_statuses is None else provider_statuses
+            ),
         }
     )
+
+
+def event_stream(message: str, *, commands: Sequence[str] = ()) -> str:
+    events: list[object] = [{"type": "thread.started", "thread_id": "test"}]
+    events.extend(
+        {
+            "type": "item.completed",
+            "item": {
+                "id": f"command-{index}",
+                "type": "command_execution",
+                "command": command,
+                "status": "completed",
+            },
+        }
+        for index, command in enumerate(commands)
+    )
+    events.append(
+        {
+            "type": "item.completed",
+            "item": {"id": "message", "type": "agent_message", "text": message},
+        }
+    )
+    events.append({"type": "turn.completed", "usage": {}})
+    return "\n".join(json.dumps(event) for event in events)
 
 
 class FakeProcessRunner:
@@ -45,6 +84,7 @@ class FakeProcessRunner:
         self.stdin: str | None = None
         self.schema: Mapping[str, object] | None = None
         self.environment: Mapping[str, str] | None = None
+        self.cwd: Path | None = None
 
     def run(
         self,
@@ -58,6 +98,7 @@ class FakeProcessRunner:
         self.command = tuple(command)
         self.stdin = stdin
         self.environment = environment
+        self.cwd = cwd
         schema_path = Path(self.command[self.command.index("--output-schema") + 1])
         self.schema = json.loads(schema_path.read_text(encoding="utf-8"))
         if isinstance(self.result, BaseException):
@@ -76,7 +117,9 @@ def runner(process: FakeProcessRunner) -> CodexAgentRunner:
 
 class CodexAgentRunnerTests(unittest.TestCase):
     def test_request_builds_non_interactive_command_prompt_and_schema(self) -> None:
-        process = FakeProcessRunner(ProcessResult(0, result_payload(), "progress"))
+        process = FakeProcessRunner(
+            ProcessResult(0, event_stream(result_payload()), "progress")
+        )
 
         result = runner(process).review(REQUEST)
 
@@ -88,6 +131,7 @@ class CodexAgentRunnerTests(unittest.TestCase):
             "--ignore-user-config",
             "--ignore-rules",
             "--output-schema",
+            "--json",
             "-",
         ):
             self.assertIn(argument, process.command)
@@ -104,13 +148,22 @@ class CodexAgentRunnerTests(unittest.TestCase):
             "category": "stability",
             "severity": "high",
             "title": "Unchecked state transition",
-            "evidence": "the added branch uses new without a guard",
+            "evidence": [
+                {
+                    "provider": "agent_diff",
+                    "revision": REQUEST.head_sha,
+                    "source": REQUEST.changed_files[0],
+                    "locator": "line 10: added branch uses new without a guard",
+                }
+            ],
             "explanation": "the diff permits an invalid state",
             "recommendation": "validate the state before applying the change",
             "confidence": 0.9,
         }
         process = FakeProcessRunner(
-            ProcessResult(0, result_payload(findings=[finding]), "")
+            ProcessResult(
+                0, event_stream(result_payload(findings=[finding])), ""
+            )
         )
 
         result = runner(process).review(REQUEST)
@@ -147,7 +200,7 @@ class CodexAgentRunnerTests(unittest.TestCase):
         self.assertNotIn("secret local path", captured.exception.reason)
 
     def test_malformed_json_is_failure(self) -> None:
-        process = FakeProcessRunner(ProcessResult(0, "not-json", ""))
+        process = FakeProcessRunner(ProcessResult(0, event_stream("not-json"), ""))
 
         with self.assertRaises(CodeAgentError):
             runner(process).review(REQUEST)
@@ -163,7 +216,9 @@ class CodexAgentRunnerTests(unittest.TestCase):
     def test_schema_invalid_is_failure(self) -> None:
         payload = json.loads(result_payload())
         payload["unknown"] = True
-        process = FakeProcessRunner(ProcessResult(0, json.dumps(payload), ""))
+        process = FakeProcessRunner(
+            ProcessResult(0, event_stream(json.dumps(payload)), "")
+        )
 
         with self.assertRaises(CodeAgentError):
             runner(process).review(REQUEST)
@@ -171,12 +226,94 @@ class CodexAgentRunnerTests(unittest.TestCase):
     def test_identity_mismatch_is_failure(self) -> None:
         payload = json.loads(result_payload())
         payload["head_sha"] = "different"
-        process = FakeProcessRunner(ProcessResult(0, json.dumps(payload), ""))
+        process = FakeProcessRunner(
+            ProcessResult(0, event_stream(json.dumps(payload)), "")
+        )
 
         with self.assertRaises(CodeAgentError) as captured:
             runner(process).review(REQUEST)
 
         self.assertIn("head_sha", captured.exception.reason)
+
+    def test_repository_aware_request_uses_worktree_and_provider_statuses(
+        self,
+    ) -> None:
+        with self.subTest("repository-aware"):
+            import tempfile
+
+            with tempfile.TemporaryDirectory() as directory:
+                root = Path(directory)
+                changed = root / REQUEST.changed_files[0]
+                changed.parent.mkdir(parents=True)
+                changed.write_text("new", encoding="utf-8")
+                skill = root / "SKILL.md"
+                skill.write_text("review skill", encoding="utf-8")
+                statuses = (
+                    ProviderStatusRef(
+                        "docs_kb", ProviderStatus.READY, "sha256:docs"
+                    ),
+                    ProviderStatusRef(
+                        "live_source", ProviderStatus.READY, REQUEST.head_sha
+                    ),
+                    ProviderStatusRef("p1", ProviderStatus.UNAVAILABLE),
+                    ProviderStatusRef("p2", ProviderStatus.UNAVAILABLE),
+                )
+                request = AgentReviewRequest(
+                    repository=REQUEST.repository,
+                    pr_id=REQUEST.pr_id,
+                    base_sha=REQUEST.base_sha,
+                    head_sha=REQUEST.head_sha,
+                    changed_files=REQUEST.changed_files,
+                    diff=REQUEST.diff,
+                    knowledge=AgentKnowledgeContext(
+                        repository_root=str(root),
+                        skill_path=str(skill),
+                        provider_statuses=statuses,
+                    ),
+                )
+                payload = json.loads(result_payload())
+                payload["degraded"] = True
+                payload["provider_statuses"] = [
+                    item.to_dict() for item in statuses
+                ]
+                process = FakeProcessRunner(
+                    ProcessResult(
+                        0,
+                        event_stream(
+                            json.dumps(payload),
+                            commands=(
+                                "python docs/kb_search.py Gesture --detail",
+                                "git rev-parse HEAD",
+                                "rg IsEscapedToManager frameworks/core",
+                            ),
+                        ),
+                        "",
+                    )
+                )
+
+                result = runner(process).review(request)
+
+                self.assertEqual(process.cwd, root)
+                self.assertIn("docs/kb_search.py", process.stdin or "")
+                self.assertTrue(result.degraded)
+                self.assertEqual(result.provider_statuses, statuses)
+
+                missing_docs = FakeProcessRunner(
+                    ProcessResult(
+                        0,
+                        event_stream(
+                            json.dumps(payload),
+                            commands=(
+                                "git rev-parse HEAD",
+                                "rg IsEscapedToManager frameworks/core",
+                            ),
+                        ),
+                        "",
+                    )
+                )
+                with self.assertRaises(CodeAgentError) as captured:
+                    runner(missing_docs).review(request)
+                self.assertIn("Docs KB", captured.exception.reason)
 
 
 if __name__ == "__main__":

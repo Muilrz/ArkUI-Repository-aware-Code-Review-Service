@@ -5,7 +5,10 @@ import unittest
 
 from arkui_agent.review_service.cli import build_parser, run
 from arkui_agent.review_service.domain import (
+    AgentKnowledgeContext,
     AgentReviewRequest,
+    ProviderStatus,
+    ProviderStatusRef,
     PullRequestContext,
     ReviewResult,
     ReviewResultStatus,
@@ -33,7 +36,10 @@ class StaticAdapter:
 
 
 class StaticAgentRunner:
+    last_request: AgentReviewRequest | None = None
+
     def review(self, request: AgentReviewRequest) -> ReviewResult:
+        self.last_request = request
         return ReviewResult(
             status=ReviewResultStatus.SUCCESS,
             repository=request.repository,
@@ -41,6 +47,10 @@ class StaticAgentRunner:
             base_sha=request.base_sha,
             head_sha=request.head_sha,
             findings=(),
+            degraded=(request.knowledge.degraded if request.knowledge else False),
+            provider_statuses=(
+                request.knowledge.provider_statuses if request.knowledge else ()
+            ),
         )
 
 
@@ -167,6 +177,44 @@ class FastMvpCliTests(unittest.TestCase):
 
         self.assertEqual(result, 1)
         self.assertIn("unsupported agent backend: claude", stderr.getvalue())
+
+    def test_repository_root_enables_knowledge_aware_agent_request(self) -> None:
+        runner = StaticAgentRunner()
+        statuses = (
+            ProviderStatusRef("docs_kb", ProviderStatus.READY, "sha256:docs"),
+            ProviderStatusRef(
+                "live_source", ProviderStatus.READY, CONTEXT.head_sha
+            ),
+            ProviderStatusRef("p1", ProviderStatus.UNAVAILABLE),
+            ProviderStatusRef("p2", ProviderStatus.UNAVAILABLE),
+        )
+
+        result = run(
+            [
+                "review",
+                "--repository",
+                CONTEXT.repository,
+                "--pr",
+                CONTEXT.pr_id,
+                "--agent",
+                "codex",
+                "--repository-root",
+                "C:/target/arkui",
+            ],
+            environ={},
+            stdout=io.StringIO(),
+            adapter_factory=lambda repository, token: StaticAdapter(),
+            agent_runner_factory=lambda backend: runner,
+            knowledge_context_factory=lambda context, root: AgentKnowledgeContext(
+                repository_root=str(root),
+                skill_path="C:/skill/SKILL.md",
+                provider_statuses=statuses,
+            ),
+        )
+
+        self.assertEqual(result, 0)
+        self.assertIsNotNone(runner.last_request)
+        self.assertEqual(runner.last_request.knowledge.provider_statuses, statuses)
 
 
 if __name__ == "__main__":

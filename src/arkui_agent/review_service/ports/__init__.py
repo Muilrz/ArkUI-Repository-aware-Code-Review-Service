@@ -32,6 +32,7 @@ from .gitcode import GitCodeProvider
 from .knowledge import KnowledgeGateway
 from .models import KnowledgeBundle
 from .result_store import ResultStore
+from .review_knowledge import ReviewKnowledgeProvider
 
 __all__ = [
     "CodeAgentError",
@@ -56,6 +57,7 @@ __all__ = [
     "ReviewErrorCategory",
     "ReviewErrorInfo",
     "ReviewPortError",
+    "ReviewKnowledgeProvider",
     "ReviewServiceConfig",
     "ReviewServiceError",
     "SecretValue",

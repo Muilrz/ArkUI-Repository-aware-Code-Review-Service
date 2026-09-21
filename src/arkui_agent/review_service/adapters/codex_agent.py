@@ -10,6 +10,8 @@ from pathlib import Path
 from ..domain import (
     AgentReviewRequest,
     ProviderEvidenceRef,
+    ProviderStatus,
+    ProviderStatusRef,
     ReviewFinding,
     ReviewResult,
     ReviewResultStatus,
@@ -60,7 +62,7 @@ class CodexAgentRunner:
         schema_builder: SchemaBuilder,
         process_runner: ProcessRunner | None = None,
         executable: str = "codex",
-        timeout_seconds: float = 180.0,
+        timeout_seconds: float = 300.0,
     ) -> None:
         self._prompt_builder = prompt_builder
         self._schema_builder = schema_builder
@@ -77,8 +79,13 @@ class CodexAgentRunner:
         schema = self._schema_builder(request)
 
         with tempfile.TemporaryDirectory(prefix="arkui-review-agent-") as temp_path:
-            workdir = Path(temp_path)
-            schema_path = workdir / "review-result.schema.json"
+            temporary_root = Path(temp_path)
+            workdir = (
+                Path(request.knowledge.repository_root)
+                if request.knowledge is not None
+                else temporary_root
+            )
+            schema_path = temporary_root / "review-result.schema.json"
             schema_path.write_text(
                 json.dumps(schema, ensure_ascii=False, sort_keys=True),
                 encoding="utf-8",
@@ -94,6 +101,7 @@ class CodexAgentRunner:
                 "--skip-git-repo-check",
                 "--output-schema",
                 str(schema_path),
+                "--json",
                 "-",
             )
             try:
@@ -117,7 +125,10 @@ class CodexAgentRunner:
             )
         if not completed.stdout.strip():
             raise CodeAgentError("Codex process returned no output")
-        return _parse_agent_result(completed.stdout, request)
+        payload, commands = _parse_codex_events(completed.stdout)
+        if request.knowledge is not None:
+            _validate_knowledge_trace(commands)
+        return _parse_agent_result(payload, request)
 
 
 def _codex_environment() -> dict[str, str]:
@@ -130,6 +141,64 @@ def _codex_environment() -> dict[str, str]:
     }
 
 
+def _parse_codex_events(payload: str) -> tuple[str, tuple[str, ...]]:
+    final_message: str | None = None
+    commands: list[str] = []
+    for line in payload.splitlines():
+        if not line.strip():
+            continue
+        try:
+            event = json.loads(line)
+        except json.JSONDecodeError as error:
+            raise CodeAgentError("Codex event stream is not valid JSONL") from error
+        if not isinstance(event, Mapping):
+            raise CodeAgentError("Codex event stream contains a non-object event")
+        event_type = event.get("type")
+        if event_type in {"error", "turn.failed"}:
+            raise CodeAgentError("Codex event stream reported a failed turn")
+        item = event.get("item")
+        if not isinstance(item, Mapping):
+            continue
+        if item.get("type") == "command_execution":
+            command = item.get("command")
+            if isinstance(command, str):
+                commands.append(command)
+        if (
+            event_type == "item.completed"
+            and item.get("type") == "agent_message"
+            and isinstance(item.get("text"), str)
+        ):
+            final_message = item["text"]
+    if final_message is None or not final_message.strip():
+        raise CodeAgentError("Codex event stream has no final agent message")
+    return final_message, tuple(commands)
+
+
+def _validate_knowledge_trace(commands: Sequence[str]) -> None:
+    normalized = tuple(command.lower() for command in commands)
+    if not any("kb_search.py" in command for command in normalized):
+        raise CodeAgentError("Codex did not query Docs KB")
+    if not any(
+        "git" in command and "rev-parse" in command for command in normalized
+    ):
+        raise CodeAgentError("Codex did not verify the Live Source revision")
+    live_markers = (
+        "rg ",
+        "rg.exe",
+        "git show",
+        "get-content",
+        "select-string",
+        "type ",
+        "sed ",
+        "awk ",
+    )
+    if not any(
+        any(marker in command for marker in live_markers)
+        for command in normalized
+    ):
+        raise CodeAgentError("Codex did not inspect Live Source")
+
+
 def _parse_agent_result(payload: str, request: AgentReviewRequest) -> ReviewResult:
     try:
         value = json.loads(payload)
@@ -140,10 +209,28 @@ def _parse_agent_result(payload: str, request: AgentReviewRequest) -> ReviewResu
             value,
             type_name="AgentReviewResult",
             required=frozenset(
-                {"status", "repository", "pr_id", "base_sha", "head_sha", "findings"}
+                {
+                    "status",
+                    "repository",
+                    "pr_id",
+                    "base_sha",
+                    "head_sha",
+                    "findings",
+                    "degraded",
+                    "provider_statuses",
+                }
             ),
         )
         _validate_identity(data, request)
+        statuses = _parse_provider_statuses(data, request)
+        degraded = data["degraded"]
+        if not isinstance(degraded, bool):
+            raise ValueError("degraded must be a boolean")
+        expected_degraded = any(
+            status.status is not ProviderStatus.READY for status in statuses
+        )
+        if degraded != expected_degraded:
+            raise ValueError("degraded does not match provider statuses")
         raw_findings = data["findings"]
         if isinstance(raw_findings, (str, bytes)) or not isinstance(
             raw_findings, Sequence
@@ -159,7 +246,24 @@ def _parse_agent_result(payload: str, request: AgentReviewRequest) -> ReviewResu
         base_sha=request.base_sha,
         head_sha=request.head_sha,
         findings=findings,
+        degraded=degraded,
+        provider_statuses=statuses,
     )
+
+
+def _parse_provider_statuses(
+    data: Mapping[str, object], request: AgentReviewRequest
+) -> tuple[ProviderStatusRef, ...]:
+    raw = data["provider_statuses"]
+    if isinstance(raw, (str, bytes)) or not isinstance(raw, Sequence):
+        raise ValueError("provider_statuses must be an array")
+    statuses = tuple(ProviderStatusRef.from_dict(item) for item in raw)
+    expected = (
+        () if request.knowledge is None else request.knowledge.provider_statuses
+    )
+    if statuses != expected:
+        raise ValueError("provider_statuses do not match knowledge preflight")
+    return statuses
 
 
 def _validate_identity(
@@ -195,7 +299,7 @@ def _parse_finding(value: object, request: AgentReviewRequest) -> ReviewFinding:
     severity_key = data["severity"]
     if severity_key not in _SEVERITIES:
         raise ValueError("finding severity is unsupported")
-    evidence_text = non_empty_string(data["evidence"], field="evidence")
+    evidence = _parse_evidence(data["evidence"], request)
     explanation = non_empty_string(data["explanation"], field="explanation")
     recommendation = non_empty_string(
         data["recommendation"], field="recommendation"
@@ -207,15 +311,58 @@ def _parse_finding(value: object, request: AgentReviewRequest) -> ReviewFinding:
         severity=_SEVERITIES[severity_key],
         title=non_empty_string(data["title"], field="title"),
         description=explanation,
-        evidence=(
-            ProviderEvidenceRef(
-                provider="agent_diff",
-                revision=request.head_sha,
-                source=file,
-                locator=f"line {line}: {evidence_text}",
-            ),
-        ),
+        evidence=evidence,
         reasoning=explanation,
         suggestion=recommendation,
         confidence=confidence_value(data["confidence"]),
     )
+
+
+def _parse_evidence(
+    value: object, request: AgentReviewRequest
+) -> tuple[ProviderEvidenceRef, ...]:
+    if isinstance(value, (str, bytes)) or not isinstance(value, Sequence):
+        raise ValueError("finding evidence must be an array")
+    evidence = tuple(ProviderEvidenceRef.from_dict(item) for item in value)
+    if not evidence:
+        raise ValueError("finding evidence must not be empty")
+    if request.knowledge is None:
+        if any(
+            item.provider != "agent_diff" or item.revision != request.head_sha
+            for item in evidence
+        ):
+            raise ValueError("diff-only evidence must use agent_diff at head_sha")
+        return evidence
+
+    status_by_provider = {
+        item.provider: item for item in request.knowledge.provider_statuses
+    }
+    for item in evidence:
+        status = status_by_provider.get(item.provider)
+        if status is None or status.status is not ProviderStatus.READY:
+            raise ValueError("finding evidence must use a ready provider")
+        if item.provider in {"live_source", "p1", "p2"}:
+            if item.revision != request.head_sha:
+                raise ValueError("source evidence revision must match head_sha")
+        elif item.provider == "docs_kb" and item.revision != status.revision:
+            raise ValueError("Docs KB evidence revision must match provider status")
+        if item.provider in {"live_source", "docs_kb"}:
+            _validate_evidence_source(item, request)
+    if not any(item.provider == "live_source" for item in evidence):
+        raise ValueError("repository-aware findings require live_source evidence")
+    return evidence
+
+
+def _validate_evidence_source(
+    evidence: ProviderEvidenceRef, request: AgentReviewRequest
+) -> None:
+    if request.knowledge is None:
+        return
+    root = Path(request.knowledge.repository_root).resolve()
+    candidate = (root / evidence.source).resolve()
+    try:
+        candidate.relative_to(root)
+    except ValueError as error:
+        raise ValueError("evidence source must remain inside repository") from error
+    if not candidate.exists():
+        raise ValueError("evidence source must exist in target repository")

@@ -20,7 +20,7 @@ M2 不读取 target repository、不调用 web、Docs KB、P1/P2 或 Skill。Dif
 
 ## Structured result and failure semantics
 
-Agent interchange JSON 必须包含 `status=success`、repository、PR id、base/head SHA 和 findings。Identity 必须与 request 完全一致。每个 finding 必须属于 changed files，并提供 line、category、severity、title、evidence、explanation、recommendation 和 confidence；adapter 将其转换为既有 `ReviewFinding`，最终返回统一 `ReviewResult`。
+Agent interchange JSON 必须包含 `status=success`、repository、PR id、base/head SHA、degraded、provider statuses 和 findings。Identity 必须与 request 完全一致。每个 finding 必须属于 changed files，并提供 line、category、severity、title、evidence、explanation、recommendation 和 confidence；adapter 将其转换为既有 `ReviewFinding`，最终返回统一 `ReviewResult`。M2 diff-only mode 的 provider statuses 为空且 `degraded=false`；M3 扩展的 repository-aware evidence contract 见对应 spec。
 
 `findings: []` 是成功完成且没有充分证据 finding。可执行文件不存在、启动失败、timeout、non-zero exit、空 stdout、invalid JSON、invalid schema 或 identity mismatch 均抛 `CodeAgentError`，不能转换成 zero findings。stderr 不进入公开错误消息或结构化结果。
 

@@ -35,6 +35,8 @@ class ReviewResult:
     base_sha: str
     head_sha: str
     findings: tuple[ReviewFinding, ...]
+    degraded: bool = False
+    provider_statuses: tuple[ProviderStatusRef, ...] = ()
 
     def __post_init__(self) -> None:
         if not isinstance(self.status, ReviewResultStatus):
@@ -56,6 +58,22 @@ class ReviewResult:
         if any(not isinstance(finding, ReviewFinding) for finding in findings):
             raise ValueError("findings must be a sequence of ReviewFinding")
         object.__setattr__(self, "findings", findings)
+        if not isinstance(self.degraded, bool):
+            raise ValueError("degraded must be a boolean")
+        if not isinstance(self.provider_statuses, Sequence):
+            raise ValueError("provider_statuses must be a sequence")
+        statuses = tuple(self.provider_statuses)
+        if any(not isinstance(item, ProviderStatusRef) for item in statuses):
+            raise ValueError("provider_statuses must contain ProviderStatusRef")
+        names = [item.provider for item in statuses]
+        if len(names) != len(set(names)):
+            raise ValueError("provider_statuses must contain unique providers")
+        has_non_ready = any(
+            item.status is not ProviderStatus.READY for item in statuses
+        )
+        if has_non_ready and not self.degraded:
+            raise ValueError("degraded must be true when a provider is not ready")
+        object.__setattr__(self, "provider_statuses", statuses)
 
     def to_dict(self) -> dict[str, Any]:
         return {
@@ -65,6 +83,10 @@ class ReviewResult:
             "base_sha": self.base_sha,
             "head_sha": self.head_sha,
             "findings": [finding.to_dict() for finding in self.findings],
+            "degraded": self.degraded,
+            "provider_statuses": [
+                status.to_dict() for status in self.provider_statuses
+            ],
         }
 
     def to_json(self) -> str:
@@ -76,7 +98,16 @@ class ReviewResult:
             value,
             type_name=cls.__name__,
             required=frozenset(
-                {"status", "repository", "pr_id", "base_sha", "head_sha", "findings"}
+                {
+                    "status",
+                    "repository",
+                    "pr_id",
+                    "base_sha",
+                    "head_sha",
+                    "findings",
+                    "degraded",
+                    "provider_statuses",
+                }
             ),
         )
         raw_findings = data["findings"]
@@ -88,6 +119,12 @@ class ReviewResult:
             findings = tuple(ReviewFinding.from_dict(item) for item in raw_findings)
         except TypeError as error:
             raise ValueError("findings must be a sequence of ReviewFinding") from error
+        raw_statuses = data["provider_statuses"]
+        if isinstance(raw_statuses, (str, bytes)) or not isinstance(
+            raw_statuses, Sequence
+        ):
+            raise ValueError("provider_statuses must be a sequence")
+        statuses = tuple(ProviderStatusRef.from_dict(item) for item in raw_statuses)
         return cls(
             status=data["status"],
             repository=data["repository"],
@@ -95,6 +132,8 @@ class ReviewResult:
             base_sha=data["base_sha"],
             head_sha=data["head_sha"],
             findings=findings,
+            degraded=data["degraded"],
+            provider_statuses=statuses,
         )
 
     @classmethod
