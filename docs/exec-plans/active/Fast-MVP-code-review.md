@@ -1,8 +1,8 @@
 # Fast-MVP — GitCode ArkUI Automated Code Review
 
 - **Route Status:** Active
-- **Current milestone:** M0 — Fast-MVP Foundation & External Tool Smoke
-- **Current milestone status:** Not Started
+- **Current milestone:** M1 — GitCode Minimal Integration
+- **Current milestone status:** In Progress
 - **Supersedes:** incomplete R1–R6 complete Service/MCP route
 - **Reuses:** completed P0/P1/P2, P3-A～E contracts, and R0 Review Service Foundation where useful
 - **Architecture:** [Technical Roadmap](../../architecture/technical-roadmap.md)
@@ -99,13 +99,13 @@ Structured result 至少表达 status、repository/PR/base/head identity、provi
 
 ### M0 — Fast-MVP Foundation & External Tool Smoke
 
-- **Status:** Not Started
+- **Status:** Completed
 - **Scope:** 验证非交互 Codex；以真实 PR 验证 GitCode API/MCP read；可选 OpenCodeReview smoke；建立最小 `arkui-review` CLI/package 与 config。
 - **Acceptance:** smoke 结果足以选择 GitCode/Codex 集成方式；CLI 可启动并读取最小配置；不实现 review engine、MCP Server、scheduler framework 或 P1/P2 refresh。
 
 ### M1 — GitCode Minimal Integration
 
-- **Status:** Not Started
+- **Status:** In Progress
 - **Scope:** list/open PR、metadata、author、base/head SHA、changed files/diff，以及发布 summary comment 的最小 boundary。
 - **Acceptance:** `arkui-review review --pr <PR_ID>` 能获取并打印真实、revision-bound PR context；无 MVP 外 GitCode 功能。
 
@@ -166,7 +166,7 @@ Fast-MVP 完成必须同时满足：
 
 每个 coding milestone 的行为变更必须新增或更新对应测试；Codex 不主动运行产品测试，由 trusted Stop Hook 按 `AGENTS.md` 执行工作树相关 `test_*.py`。真实 GitCode/Codex/ArkUI smoke 与 demo validation 只在相应 milestone 明确要求时运行；strict full、ArkUI baseline 和昂贵验证由用户显式触发。
 
-本次路线切换是纯文档任务，只执行 Markdown/link/diff 静态检查和 `git diff --check`，不运行产品测试。
+M0/M1 明确允许执行 Codex CLI capability smoke、真实 GitCode public-read smoke 与真实 `arkui-review review` 命令。产品测试仍由 trusted Stop Hook 只选择工作树新增或修改的 `test_*.py`；不主动运行 full tests 或 ArkUI baseline。
 
 ## Demo Definition of Done
 

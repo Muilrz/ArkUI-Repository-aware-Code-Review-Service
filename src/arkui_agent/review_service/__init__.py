@@ -4,6 +4,7 @@ The package is organized as inward-pointing layers:
 
 ``domain <- ports <- application`` and ``domain/ports <- adapters``.
 
-R0 provides contracts only. Concrete GitCode, knowledge-provider, review-engine,
-telemetry, MCP, and scheduler behavior belongs to later milestones.
+R0 provides the reusable contracts. Fast-MVP M1 adds only a minimal GitCode REST
+adapter and PR-context CLI; review reasoning, knowledge, MCP, and scheduling remain
+outside this milestone.
 """

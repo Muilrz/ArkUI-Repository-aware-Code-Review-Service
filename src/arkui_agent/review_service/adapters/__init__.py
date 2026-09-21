@@ -1,5 +1,17 @@
-"""Concrete implementations of Code Review Service ports.
+"""Concrete implementations of Code Review Service ports."""
 
-Adapters point inward to domain and port contracts. R0-A defines only this
-package boundary; concrete integrations are introduced by later milestones.
-"""
+from .gitcode_rest import (
+    DEFAULT_GITCODE_API_BASE,
+    GitCodeRestAdapter,
+    HttpResponse,
+    HttpTransport,
+    UrllibHttpTransport,
+)
+
+__all__ = [
+    "DEFAULT_GITCODE_API_BASE",
+    "GitCodeRestAdapter",
+    "HttpResponse",
+    "HttpTransport",
+    "UrllibHttpTransport",
+]

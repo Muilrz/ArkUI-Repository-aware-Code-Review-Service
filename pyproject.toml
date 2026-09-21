@@ -9,6 +9,9 @@ description = "Repository-aware Code Review Service for OpenHarmony ArkUI Ace En
 requires-python = ">=3.11"
 dependencies = []
 
+[project.scripts]
+arkui-review = "arkui_agent.review_service.cli:main"
+
 [tool.setuptools]
 package-dir = { "" = "src" }
 

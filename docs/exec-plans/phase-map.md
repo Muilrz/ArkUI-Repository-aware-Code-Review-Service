@@ -32,7 +32,7 @@ R0 的 `Completed` 是已验收实现事实；“route superseded”表示它不
 
 ## 4. M0 — Fast-MVP Foundation & External Tool Smoke
 
-**Status:** Not Started
+**Status:** Completed
 
 **Definition of Done:**
 
@@ -42,6 +42,8 @@ R0 的 `Completed` 是已验收实现事实；“route superseded”表示它不
 4. 不实现 Review Engine、完整 MCP Server、scheduler framework 或 P1/P2 refresh integration。
 
 ## 5. M1 — GitCode Minimal Integration
+
+**Status:** In Progress
 
 **Definition of Done:**
 
@@ -94,6 +96,6 @@ R0 的 `Completed` 是已验收实现事实；“route superseded”表示它不
 
 ## 11. Dependency and execution rules
 
-默认交付顺序为 `M0 → M1 → M2 → M3 → M4 → M5 → M6`。当前 active plan 是 [`active/Fast-MVP-code-review.md`](active/Fast-MVP-code-review.md)，当前实施入口为 M0，状态为 `Not Started`。
+默认交付顺序为 `M0 → M1 → M2 → M3 → M4 → M5 → M6`。当前 active plan 是 [`active/Fast-MVP-code-review.md`](active/Fast-MVP-code-review.md)，M0 已完成，当前 milestone 为 M1，状态为 `In Progress`。
 
 Status 统一使用 `Not Started`、`In Progress`、`Blocked`、`Completed`、`Superseded`。开始实现时只将所选 milestone 设为 `In Progress`；只有 Acceptance Criteria 与必需验证全部通过才能标记 `Completed`。本次路线切换是纯文档修改，不表示 M0 已开始。

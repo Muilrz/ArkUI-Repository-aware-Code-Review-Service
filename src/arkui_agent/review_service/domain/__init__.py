@@ -10,6 +10,7 @@ from .job import (
     ReviewJobState,
 )
 from .location import SourceRange
+from .pull_request import PullRequestContext, PullRequestSummary
 from .request import ChangeRef, ReviewRequest
 from .result import ReviewResultSummary
 
@@ -18,6 +19,8 @@ __all__ = [
     "ProviderEvidenceRef",
     "ProviderStatus",
     "ProviderStatusRef",
+    "PullRequestContext",
+    "PullRequestSummary",
     "ReviewFinding",
     "ReviewFailureStage",
     "ReviewIdentity",
