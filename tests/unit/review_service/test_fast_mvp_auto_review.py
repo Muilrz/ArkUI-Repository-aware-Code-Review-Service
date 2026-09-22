@@ -21,10 +21,12 @@ from arkui_agent.review_service.domain import (
 from arkui_agent.review_service.ports import GitCodeProviderError, ResultStoreError
 
 
-def context(*, base: str = "base-a", author: str = "allowed") -> PullRequestContext:
+def context(
+    *, base: str = "base-a", head: str = "head-a", author: str = "allowed"
+) -> PullRequestContext:
     return PullRequestContext(
         repository="owner/repo", pr_id="1", title="change", author=author,
-        base_sha=base, head_sha="head-a", changed_files=("a.cpp",),
+        base_sha=base, head_sha=head, changed_files=("a.cpp",),
         diff="@@ -1 +1 @@\n-old\n+new",
     )
 
@@ -149,9 +151,20 @@ class AutoReviewTests(unittest.TestCase):
         self.assertEqual(self.events, ["list"])
         self.gitcode.pr = context(base="base-b")
         self.events.clear()
-        self.assertEqual(len(self.service().poll_once().published), 1)
+        base_change = self.service().poll_once().published
+        self.assertEqual(len(base_change), 1)
+        self.assertEqual(base_change[0][0].head_sha, "head-a")
+        self.assertEqual(base_change[0][0].base_sha, "base-b")
         self.events.clear()
-        self.assertEqual(len(self.service(policy="v2").poll_once().published), 1)
+        policy_change = self.service(policy="v2").poll_once().published
+        self.assertEqual(len(policy_change), 1)
+        self.assertEqual(policy_change[0][0].head_sha, "head-a")
+        self.assertEqual(policy_change[0][0].review_policy_version, "v2")
+        self.gitcode.pr = context(base="base-b", head="head-b")
+        self.events.clear()
+        head_change = self.service(policy="v2").poll_once().published
+        self.assertEqual(len(head_change), 1)
+        self.assertEqual(head_change[0][0].head_sha, "head-b")
 
     def test_failed_review_and_publish_do_not_complete_identity(self) -> None:
         identity = FastMvpReviewIdentity.from_pr(self.gitcode.pr, "v1")

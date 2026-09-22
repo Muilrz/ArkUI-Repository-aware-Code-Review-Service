@@ -16,10 +16,11 @@ class ReviewKnowledgeFacade:
     """Thin provider facade for service callers and tool-capable agents."""
 
     def __init__(self, providers: Mapping[str, ReviewKnowledgeProvider]) -> None:
-        expected = {"docs_kb", "live_source", "p1", "p2"}
-        if set(providers) != expected:
+        required = {"docs_kb", "live_source"}
+        allowed = required | {"p1", "p2"}
+        if not required <= set(providers) <= allowed:
             raise ValueError(
-                "providers must contain docs_kb, live_source, p1, and p2"
+                "providers must contain docs_kb and live_source, with optional p1 and p2"
             )
         if any(provider.name != name for name, provider in providers.items()):
             raise ValueError("provider mapping key must match provider name")
@@ -46,9 +47,11 @@ class ReviewKnowledgeFacade:
                 text=docs_query,
             )
         )
-        p1 = self._providers["p1"].probe(repository, revision)
-        p2 = self._providers["p2"].probe(repository, revision)
-        results = (docs, live, p1, p2)
+        results = (docs, live) + tuple(
+            self._providers[name].probe(repository, revision)
+            for name in ("p1", "p2")
+            if name in self._providers
+        )
         return KnowledgeContext(
             provider_statuses=tuple(result.status for result in results),
             evidence=tuple(

@@ -50,6 +50,57 @@ class CommandProcessRunner:
 
 
 class FastMvpKnowledgeTests(unittest.TestCase):
+    def test_runtime_docs_and_live_only_report_actual_degradation(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            live = LiveSourceProvider(
+                root,
+                process_runner=CommandProcessRunner(
+                    {
+                        ("git", "rev-parse", "HEAD"): ProcessResult(0, REVISION, ""),
+                        ("git", "status", "--porcelain", "--untracked-files=no"):
+                            ProcessResult(0, "", ""),
+                    }
+                ),
+            )
+            docs_runner = CommandProcessRunner(
+                {
+                    (sys.executable, "docs/kb_search.py", "gesture", "--detail"):
+                        ProcessResult(0, "gesture kb", ""),
+                }
+            )
+            facade = ReviewKnowledgeFacade(
+                {
+                    "docs_kb": DocsKbProvider(root, process_runner=docs_runner),
+                    "live_source": live,
+                }
+            )
+
+            unavailable = facade.prepare(
+                repository=REPOSITORY, revision=REVISION, docs_query="gesture"
+            )
+            self.assertEqual(
+                tuple(item.provider for item in unavailable.provider_statuses),
+                ("docs_kb", "live_source"),
+            )
+            self.assertEqual(
+                unavailable.provider_statuses[0].status, ProviderStatus.UNAVAILABLE
+            )
+            self.assertTrue(unavailable.degraded)
+            self.assertEqual(docs_runner.calls, [])
+
+            (root / "docs").mkdir()
+            (root / "docs" / "kb_search.py").write_text("", encoding="utf-8")
+            (root / "docs" / "context_registry.json").write_text(
+                "{}", encoding="utf-8"
+            )
+            ready = facade.prepare(
+                repository=REPOSITORY, revision=REVISION, docs_query="gesture"
+            )
+            self.assertFalse(ready.degraded)
+            self.assertEqual(len(ready.evidence), 1)
+            self.assertEqual(len(docs_runner.calls), 1)
+
     def test_docs_kb_search_returns_versioned_provider_evidence(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)

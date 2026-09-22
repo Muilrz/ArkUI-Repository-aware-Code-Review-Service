@@ -95,17 +95,17 @@ R0 的 `Completed` 是已验收实现事实；“route superseded”表示它不
 
 ## 10. M6 — Demo Validation & Hardening
 
-**Status:** In Progress
+**Status:** Completed
 
 **Definition of Done:**
 
-1. 真实 GitCode PR 可由 manual trigger 或 poll 完成 Codex review、knowledge retrieval、structured result、GitCode comment 和 SHA dedup。
-2. author whitelist、polling interval、same-head suppression 和 new-head re-review 均有验证证据。
-3. manual knowledge update 可用，P1/P2 unavailable 时 degraded review 可用。
+1. 真实 GitCode PR 可由 manual trigger 或 poll 完成 Codex review、Docs KB + Live Source knowledge retrieval、structured result、GitCode comment 和完整 review identity dedup。
+2. author whitelist、polling interval、相同 `repository + pr_id + base_sha + head_sha + review_policy_version` 跳过，以及 head、base 或 policy version 变化后的重新 review 均有验证证据。
+3. manual knowledge update 可用；验证当前 runtime 的 Docs KB unavailable/error degradation 与 Live Source revision failure 语义，不把 P1/P2 作为 M6 runtime 前置依赖。
 4. 只修复 MVP 闭环的可靠性、安全性与演示阻塞项，不扩展为完整长期平台。
 
 ## 11. Dependency and execution rules
 
-默认交付顺序为 `M0 → M1 → M2 → M3 → M4 → M5 → M6`。当前 active plan 是 [`active/Fast-MVP-code-review.md`](active/Fast-MVP-code-review.md)，M0–M5 已完成；M6 为 `In Progress`。
+默认交付顺序为 `M0 → M1 → M2 → M3 → M4 → M5 → M6`。当前 active plan 是 [`active/Fast-MVP-code-review.md`](active/Fast-MVP-code-review.md)，M0–M6 已完成。
 
-Status 统一使用 `Not Started`、`In Progress`、`Blocked`、`Completed`、`Superseded`。开始实现时只将所选 milestone 设为 `In Progress`；只有 Acceptance Criteria 与必需验证全部通过才能标记 `Completed`。本次路线切换是纯文档修改，不表示 M0 已开始。
+Status 统一使用 `Not Started`、`In Progress`、`Blocked`、`Completed`、`Superseded`。开始实现时只将所选 milestone 设为 `In Progress`；只有 Acceptance Criteria 与必需验证全部通过才能标记 `Completed`。

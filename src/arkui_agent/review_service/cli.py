@@ -16,8 +16,6 @@ from .adapters import (
     GitCodeRestAdapter,
     GitRevisionPreparer,
     LiveSourceProvider,
-    P1KnowledgeProvider,
-    P2KnowledgeProvider,
     SqliteReviewState,
 )
 from .application import (
@@ -247,8 +245,6 @@ def _prepare_knowledge_context(
         {
             "docs_kb": DocsKbProvider(resolved_root),
             "live_source": LiveSourceProvider(resolved_root),
-            "p1": P1KnowledgeProvider(),
-            "p2": P2KnowledgeProvider(),
         }
     )
     knowledge = facade.prepare(

@@ -66,7 +66,7 @@ R0 — Review Service Foundation 已完成，计划和 specs 继续记录已实�
 - M5 — Auto Polling & Knowledge Refresh
 - M6 — Demo Validation & Hardening
 
-当前 active plan 是 `docs/exec-plans/active/Fast-MVP-code-review.md`。M0–M5 已完成；M6 为 `In Progress`，仅实施 M6 范围。
+当前 active plan 是 `docs/exec-plans/active/Fast-MVP-code-review.md`。M0–M6 已完成；不因 M6 完成而自动开始后续阶段。
 
 ## Core Architecture Boundaries
 
@@ -83,6 +83,7 @@ R0 — Review Service Foundation 已完成，计划和 specs 继续记录已实�
 
 - Docs KB / `kb_search` 与 Live Source 是 MVP 必选；Live Source 使用目标 repository revision 的 Git、filesystem 和 `rg`，是源码事实的最终 source of truth。
 - P1 继续提供 symbol / definition / references / callers / callees / tests；P2 继续提供 ArkUI-specific semantic relations，二者均为 optional enhancement。
+- 当前 Fast-MVP CLI runtime 只配置 ArkUI Review Skill、Docs KB / `kb_search.py` 与 Git / `rg` / filesystem Live Source；P1/P2 不作为 M6 runtime 验收依赖。
 - P1/P2 stale、unavailable 或 refresh 失败时不得阻塞 review；必须能以 `Docs KB + Live Source` degraded review。旧 revision 的 P1/P2 facts 不能作为当前 revision 的确定事实。
 - knowledge status 应按来源报告 revision、ready/stale/unavailable/error 和必要 diagnostics；不得以统一 snapshot readiness 作为 review 的硬门槛。
 - 第一阶段 review category 为 Stability、Memory / Resource / Lifetime、Functional Correctness。Review 允许成功地产生 zero findings；无足够源码证据不得制造 finding。

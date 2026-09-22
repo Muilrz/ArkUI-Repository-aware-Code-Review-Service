@@ -101,6 +101,44 @@ def runner(process: FakeProcessRunner) -> CodexAgentRunner:
 
 
 class CodexAgentRunnerTests(unittest.TestCase):
+    def test_repository_review_allows_unavailable_docs_without_kb_command(self) -> None:
+        import tempfile
+
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            statuses = (
+                ProviderStatusRef("docs_kb", ProviderStatus.UNAVAILABLE),
+                ProviderStatusRef("live_source", ProviderStatus.READY, REQUEST.head_sha),
+            )
+            request = AgentReviewRequest(
+                repository=REQUEST.repository,
+                pr_id=REQUEST.pr_id,
+                base_sha=REQUEST.base_sha,
+                head_sha=REQUEST.head_sha,
+                changed_files=REQUEST.changed_files,
+                diff=REQUEST.diff,
+                knowledge=AgentKnowledgeContext(
+                    repository_root=str(root),
+                    skill_path=str(root / "SKILL.md"),
+                    provider_statuses=statuses,
+                ),
+            )
+            process = FakeProcessRunner(
+                ProcessResult(
+                    0,
+                    event_stream(
+                        result_payload(),
+                        commands=("git rev-parse HEAD", "rg symbol frameworks/core"),
+                    ),
+                    "",
+                )
+            )
+            result = runner(process).review(request)
+            self.assertEqual(result.status, ReviewResultStatus.SUCCESS)
+            self.assertTrue(result.degraded)
+            self.assertEqual(result.provider_statuses, statuses)
+            self.assertIn("when the supplied Docs KB status is ready", process.stdin or "")
+
     def test_request_builds_non_interactive_command_prompt_and_schema(self) -> None:
         process = FakeProcessRunner(
             ProcessResult(0, event_stream(result_payload()), "progress")

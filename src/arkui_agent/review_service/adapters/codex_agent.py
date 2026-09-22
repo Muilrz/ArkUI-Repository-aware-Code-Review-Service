@@ -126,7 +126,11 @@ class CodexAgentRunner:
             raise CodeAgentError("Codex process returned no output")
         payload, commands = _parse_codex_events(completed.stdout)
         if request.knowledge is not None:
-            _validate_knowledge_trace(commands)
+            docs_ready = any(
+                item.provider == "docs_kb" and item.status is ProviderStatus.READY
+                for item in request.knowledge.provider_statuses
+            )
+            _validate_knowledge_trace(commands, require_docs=docs_ready)
         return _parse_agent_result(payload, request)
 
 
@@ -173,9 +177,11 @@ def _parse_codex_events(payload: str) -> tuple[str, tuple[str, ...]]:
     return final_message, tuple(commands)
 
 
-def _validate_knowledge_trace(commands: Sequence[str]) -> None:
+def _validate_knowledge_trace(
+    commands: Sequence[str], *, require_docs: bool
+) -> None:
     normalized = tuple(command.lower() for command in commands)
-    if not any("kb_search.py" in command for command in normalized):
+    if require_docs and not any("kb_search.py" in command for command in normalized):
         raise CodeAgentError("Codex did not query Docs KB")
     if not any(
         "git" in command and "rev-parse" in command for command in normalized

@@ -112,7 +112,9 @@ provider status or degraded state."""
     return f"""This is a repository-aware ArkUI review. Read and follow the Skill
 at {request.knowledge.skill_path}. The worktree at
 {request.knowledge.repository_root} was preflighted at the requested head SHA.
-Use docs/kb_search.py for Docs KB and Git/rg/filesystem for Live Source. Inspect
+Use docs/kb_search.py when the supplied Docs KB status is ready; otherwise
+continue with Live Source and report no unsupported domain claims. Use
+Git/rg/filesystem for Live Source. Inspect
 complete changed functions/classes and relevant call sites. P1/P2 are optional;
 their supplied status controls whether their facts may be used. Live Source is
 authoritative for current source facts. Provider statuses and degraded state are

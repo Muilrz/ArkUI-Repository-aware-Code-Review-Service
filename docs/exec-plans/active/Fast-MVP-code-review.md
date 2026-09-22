@@ -2,7 +2,7 @@
 
 - **Route Status:** Active
 - **Current milestone:** M6 — Demo Validation / Hardening
-- **Current milestone status:** In Progress
+- **Current milestone status:** Completed
 - **Supersedes:** incomplete R1–R6 complete Service/MCP route
 - **Reuses:** completed P0/P1/P2, P3-A～E contracts, and R0 Review Service Foundation where useful
 - **Architecture:** [Technical Roadmap](../../architecture/technical-roadmap.md)
@@ -12,7 +12,7 @@
 
 交付目标已从按 R0→R6 顺序建设完整自研 Code Review Service、Repository Knowledge Service 和 MCP Server，切换为在极短时间内交付可运行、可演示的 GitCode ArkUI 自动代码检视 MVP。R0 已完成的基础与 P1/P2/P3 历史能力保留；未开始的 R1–R6 不再是当前执行计划。
 
-本计划只定义 Fast-MVP 实施。创建和激活本计划不表示任何 M0–M6 产品能力已完成；开始 coding 时只把明确选择的 milestone 改为 `In Progress`。
+本计划记录 Fast-MVP M0–M6 的实施范围与验收状态。Milestone 只有在 Acceptance Criteria 与必需验证全部通过后才标记为 `Completed`。
 
 ## Goal
 
@@ -137,10 +137,10 @@ Structured result 至少表达 status、repository/PR/base/head identity、provi
 
 ### M6 — Demo Validation / Hardening
 
-- **Status:** In Progress
+- **Status:** Completed
 - **Scope:** 只验证并修复真实 MVP 闭环。
-- **Acceptance:** manual/poll trigger、whitelist、interval、same-head suppression、new-head review、manual knowledge update、degraded review 和 GitCode comment 均有真实验证证据。
-- **Current validation:** 公开读取真实 `muil793608902/arkui-review-test#1` 成功，base/head 与 M5 completed identity 一致。手动 repository-aware review 已复用 detached revision worktree 并补充 targeted tests；真实手动 Codex、new-head、whitelist/interval、knowledge update 与本轮 comment 验收仍待执行。
+- **Acceptance:** manual/poll trigger、whitelist、interval、相同完整 identity 跳过、head/base/policy 任一变化后的重新 review、manual knowledge update、当前 Docs KB + Live Source degradation 语义和 GitCode comment 均有验证证据。完整 identity 为 `repository + pr_id + base_sha + head_sha + review_policy_version`；P1/P2 不作为 M6 runtime 验收依赖。
+- **Validation:** 本轮修改的 targeted tests 为 44 passed、0 failed。真实 `muil793608902/arkui-review-test#1` 手动 Codex review 在 detached worktree 返回 degraded zero findings，主 checkout HEAD 未变且 runtime worktree 已清理；显式 manual publish 成功，评论含目标 head 与降级状态，无 token/prompt/trace 泄漏。真实 `poll --once` 验证 whitelist `discovered=1, filtered=1`、相同完整 identity `deduplicated=1`。测试 PR 最小 commit 将 head 从 `8f42b31c71eba695f67fac67b047b4612d4e75f8` 更新至 `24f3c4aba62452443efc79b86f8fd35e2f78ca0c` 后，poll 完成新 review、publish 与 SQLite completed 记录，重复 poll 再次 dedup；base/policy 变化由 targeted tests 覆盖。`--interval 2` 连续两轮 poll 验证短间隔配置。真实 ArkUI Git sparse checkout 上 `knowledge status/update` 与 Docs KB 查询成功，Docs KB/Live Source 均 ready；测试 PR 缺 Docs KB 时 degraded review 成功。
 
 ## Acceptance Criteria
 
@@ -153,13 +153,12 @@ Fast-MVP 完成必须同时满足：
 5. 三类 review 使用与目标 revision 对齐的源码证据；zero findings 合法且与 failure 区分。
 6. Review 结果可发布为 GitCode PR summary comment，成功发布后才持久化 reviewed identity。
 7. `arkui-review knowledge update/status` 与每日 refresh 可用。
-8. P1/P2 unavailable、stale 或 refresh failure 时，Docs KB + Live Source degraded path 仍可 review 并报告 degradation。
+8. 当前 Fast-MVP runtime 使用 ArkUI Review Skill、Docs KB / `kb_search.py` 与 Git / `rg` / filesystem Live Source；Docs KB unavailable/error 时报告 degraded，Live Source 无法对齐 head revision 时失败。P1/P2 不作为当前 runtime 验收依赖。
 9. P1/P2/P3/R0 已实现 contract、fixtures 和 baseline 未被追溯改写。
 
 ## Degraded behavior
 
-- P1 unavailable/stale/error：停止使用其 current-fact claims，报告状态，继续 Docs KB + Live Source。
-- P2 unavailable/stale/error：停止使用其 semantic relation claims，报告状态，继续 Docs KB + Live Source，可保留已验证的 P1。
+- P1/P2 当前不进入 Fast-MVP runtime；历史 optional provider contract 保留，不纳入 M6 degradation smoke。
 - Docs KB 暂不可用：报告 degraded；只有 Live Source 和 review policy 足以支持具体 finding 时才继续，不猜测领域事实。
 - Live Source 无法对齐目标 head revision：review 失败，不发布成功评论，不持久化 reviewed head。
 - Codex/Agent、schema validation 或 GitCode publish 失败：保留可重试诊断，不记录成功 dedup。
@@ -186,7 +185,7 @@ M0/M1 明确允许执行 Codex CLI capability smoke、真实 GitCode public-read
   → full review identity dedup
 ```
 
-演示必须至少显示一个真实 PR、所用 head SHA、knowledge/degradation 状态、结构化结果、已发布 summary comment，以及重复触发未产生第二次 review；若 PR 更新为新 head，能够重新 review。
+演示必须至少显示一个真实 PR、所用 base/head SHA、knowledge/degradation 状态、结构化结果、已发布 summary comment，以及相同完整 identity 重复触发未产生第二次 review；head、base 或 policy version 变化应触发重新 review。
 
 ## Explicitly deferred work
 

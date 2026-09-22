@@ -121,7 +121,7 @@ M0 Foundation & External Tool Smoke
  → M6 Demo Validation & Hardening
 ```
 
-Fast-MVP 的阶段边界以 [Phase Map](../exec-plans/phase-map.md) 为准。当前 active plan 是 [Fast-MVP-code-review.md](../exec-plans/active/Fast-MVP-code-review.md)，当前实施入口为 M0；路线切换本身不表示 M0 产品实现已经开始或完成。
+Fast-MVP 的阶段边界以 [Phase Map](../exec-plans/phase-map.md) 为准。当前 active plan 是 [Fast-MVP-code-review.md](../exec-plans/active/Fast-MVP-code-review.md)；M0–M6 已完成。当前 CLI runtime 使用 Docs KB 与 Live Source；P1/P2 仍是架构上的可选增强，不属于已验收 runtime 路径。
 
 ## 6. MVP 之后
 

@@ -19,14 +19,14 @@ query(KnowledgeQuery) -> KnowledgeProviderResult
 
 每个结果携带 `ProviderStatusRef` 和可用时的 `KnowledgeEvidence`。Evidence 包含 provider、revision、source、locator 与 content；non-ready provider 不得暴露可用 evidence。
 
-`ReviewKnowledgeFacade` 固定组合四个 provider：
+`ReviewKnowledgeFacade` 要求 Docs KB 与 Live Source，并允许显式配置 optional P1/P2。当前 Fast-MVP CLI runtime 只配置前两者：
 
 - `DocsKbProvider`：调用目标 repository 的 `docs/kb_search.py <term> --detail`，以 `docs/context_registry.json` SHA-256 标识 KB revision；
 - `LiveSourceProvider`：每次查询前验证 Git HEAD 等于 review head 且 tracked worktree clean，再通过 `rg` 或 filesystem read 返回证据；
-- `P1KnowledgeProvider`：definition/references/callers/callees/symbols/tests 的 optional facade；
-- `P2KnowledgeProvider`：ArkUI framework relations 的 optional facade。
+- `P1KnowledgeProvider`：历史 M3 optional facade，当前 CLI runtime 不配置；
+- `P2KnowledgeProvider`：历史 M3 optional facade，当前 CLI runtime 不配置。
 
-Live Source stale/unavailable/error 是 hard failure。Docs KB 非 ready 时可以在 Live Source 足够的情况下 degraded；P1/P2 未配置、stale 或 error 时不返回 evidence，并继续 Docs KB + Live Source。P1/P2 frozen semantics、fixtures 和 baseline 未修改。
+Live Source stale/unavailable/error 是 hard failure。Docs KB 非 ready 时可以在 Live Source 与 review policy 证据足够的情况下 degraded；Codex trace 此时不要求运行缺失的 `kb_search.py`。当前 CLI 的 result 只报告 Docs KB 与 Live Source status，因此 P1/P2 未配置不会使每次 review 虚假地标记 degraded。显式配置的历史 optional P1/P2 仍遵循非 ready 时不返回 evidence 的 contract；其 frozen semantics、fixtures 和 baseline 未修改。
 
 ## Agent integration and result validation
 
@@ -34,7 +34,7 @@ Live Source stale/unavailable/error 是 hard failure。Docs KB 非 ready 时可�
 
 Codex 是首个验证 adapter，不是 Skill 或 knowledge API 的依赖。其 repository-aware mode 在已验证 worktree 中以 read-only sandbox 运行，并使用 JSONL event trace 验证 Agent 实际执行：
 
-- Docs KB `kb_search.py`；
+- Docs KB ready 时执行 `kb_search.py`；unavailable/error 时报告 status 并继续 Live Source；
 - `git rev-parse` revision check；
 - `rg`/Git/filesystem Live Source inspection。
 

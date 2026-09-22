@@ -37,6 +37,8 @@ Every finding must cite at least one `live_source` reference with head SHA, repo
 
 ## Optional providers
 
+当前 Fast-MVP CLI runtime 未配置 P1/P2。以下规则仅适用于显式配置这些 optional provider 的调用方。
+
 ### P1 Repository Intelligence
 
 Use only when its provider status is `ready` and revision equals head SHA. Available facts may include symbols, definition, references, callers, callees, fixtures, and tests. Empty results are not failures. If stale/unavailable/error, do not use returned facts and continue degraded.
@@ -57,4 +59,3 @@ diagnostics: short operational facts without credentials
 ```
 
 The result is degraded when any reported provider is non-ready. P1/P2 degradation does not block review. Live Source non-readiness always blocks success.
-
