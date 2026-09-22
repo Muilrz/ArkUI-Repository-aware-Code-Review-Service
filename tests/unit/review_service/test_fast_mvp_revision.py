@@ -1,66 +1,107 @@
 from __future__ import annotations
 
+import subprocess
 import tempfile
 import unittest
 from pathlib import Path
 
-from arkui_agent.review_service.adapters import GitRevisionPreparer, ProcessResult
+from arkui_agent.review_service.adapters import GitRevisionPreparer
 from arkui_agent.review_service.ports import KnowledgeGatewayError
 
 
-class FakeGitProcess:
-    def __init__(self, head: str = "head-a", *, fetch_code: int = 0) -> None:
-        self.head = head
-        self.fetch_code = fetch_code
-        self.commands: list[tuple[str, ...]] = []
-
-    def run(self, command, *, stdin, cwd, timeout_seconds, environment=None):
-        command = tuple(command)
-        self.commands.append(command)
-        if command[:2] == ("git", "fetch"):
-            return ProcessResult(self.fetch_code, "", "private stderr")
-        if command == ("git", "rev-parse", "HEAD"):
-            return ProcessResult(0, self.head + "\n", "")
-        if command[:2] == ("git", "status"):
-            return ProcessResult(0, "", "")
-        raise AssertionError(f"unexpected command: {command}")
+def git(*args: str, cwd: Path | None = None) -> str:
+    result = subprocess.run(
+        ("git", *args), cwd=cwd, capture_output=True, text=True,
+        encoding="utf-8", errors="replace", check=False,
+    )
+    if result.returncode:
+        raise AssertionError(f"local Git fixture failed: {args[0]}")
+    return result.stdout.strip()
 
 
 class GitRevisionPreparerTests(unittest.TestCase):
-    def test_fetch_then_verify_exact_head_and_clean_source(self) -> None:
-        with tempfile.TemporaryDirectory() as directory:
-            process = FakeGitProcess()
-            preparer = GitRevisionPreparer(Path(directory), process_runner=process)
-            preparer.prepare("head-a")
-            self.assertEqual(process.commands[0], ("git", "fetch", "--no-tags", "origin"))
-            self.assertIn(("git", "rev-parse", "HEAD"), process.commands)
-            self.assertTrue(any(command[:2] == ("git", "status") for command in process.commands))
+    def setUp(self) -> None:
+        self.temp = tempfile.TemporaryDirectory()
+        self.addCleanup(self.temp.cleanup)
+        base = Path(self.temp.name)
+        self.remote = base / "remote.git"
+        self.author = base / "author"
+        self.target = base / "target"
+        self.runtime = base / "runtime"
+        git("init", "--bare", "--initial-branch=main", str(self.remote))
+        git("clone", str(self.remote), str(self.author))
+        (self.author / "docs").mkdir()
+        (self.author / "docs" / "context_registry.json").write_text("{}", encoding="utf-8")
+        (self.author / "docs" / "kb_search.py").write_text("", encoding="utf-8")
+        (self.author / "a.cpp").write_text("old", encoding="utf-8")
+        git("add", ".", cwd=self.author)
+        git("-c", "user.name=Test", "-c", "user.email=test@example.invalid",
+            "commit", "-m", "first", cwd=self.author)
+        git("push", "origin", "HEAD:main", cwd=self.author)
+        git("clone", str(self.remote), str(self.target))
+        self.main_head = git("rev-parse", "HEAD", cwd=self.target)
+        (self.author / "a.cpp").write_text("new", encoding="utf-8")
+        git("add", ".", cwd=self.author)
+        git("-c", "user.name=Test", "-c", "user.email=test@example.invalid",
+            "commit", "-m", "second", cwd=self.author)
+        git("push", "origin", "HEAD:main", cwd=self.author)
+        self.target_head = git("rev-parse", "HEAD", cwd=self.author)
 
-    def test_mismatched_head_and_fetch_failure_fail_explicitly(self) -> None:
-        with tempfile.TemporaryDirectory() as directory:
-            mismatch = GitRevisionPreparer(
-                Path(directory), process_runner=FakeGitProcess(head="other")
-            )
-            with self.assertRaises(KnowledgeGatewayError):
-                mismatch.prepare("head-a")
-            failure = GitRevisionPreparer(
-                Path(directory), process_runner=FakeGitProcess(fetch_code=1)
-            )
-            with self.assertRaises(KnowledgeGatewayError) as captured:
-                failure.prepare("head-a")
-            self.assertNotIn("private stderr", captured.exception.reason)
+    def test_detached_revision_without_switching_main_head_and_cleanup(self) -> None:
+        preparer = GitRevisionPreparer(self.target, runtime_root=self.runtime)
+        with preparer.prepare(self.target_head) as prepared:
+            self.assertEqual(git("rev-parse", "HEAD", cwd=prepared), self.target_head)
+            self.assertEqual((prepared / "a.cpp").read_text(encoding="utf-8"), "new")
+            self.assertEqual((self.target / "a.cpp").read_text(encoding="utf-8"), "old")
+            self.assertEqual(git("rev-parse", "HEAD", cwd=self.target), self.main_head)
+            self.assertTrue((prepared / "docs" / "kb_search.py").is_file())
+        self.assertFalse(prepared.exists())
+        self.assertEqual(git("rev-parse", "HEAD", cwd=self.target), self.main_head)
 
-    def test_status_reports_docs_and_live_revision(self) -> None:
-        with tempfile.TemporaryDirectory() as directory:
-            root = Path(directory)
-            registry = root / "docs" / "context_registry.json"
-            registry.parent.mkdir()
-            registry.write_text("{}", encoding="utf-8")
-            (root / "docs" / "kb_search.py").write_text("", encoding="utf-8")
-            status = GitRevisionPreparer(
-                root, process_runner=FakeGitProcess()
-            ).status()
-            self.assertEqual(status["head_sha"], "head-a")
-            self.assertEqual(status["docs_kb_status"], "ready")
-            self.assertEqual(status["live_source_status"], "ready")
-            self.assertTrue(status["docs_kb_revision"].startswith("sha256:"))
+    def test_existing_stale_service_worktree_is_safely_rebuilt(self) -> None:
+        preparer = GitRevisionPreparer(self.target, runtime_root=self.runtime)
+        stale = preparer._materialize(self.target_head)
+        git("checkout", "--detach", self.main_head, cwd=stale)
+        with preparer.prepare(self.target_head) as prepared:
+            self.assertEqual(prepared, stale)
+            self.assertEqual(git("rev-parse", "HEAD", cwd=prepared), self.target_head)
+        self.assertFalse(stale.exists())
+
+    def test_existing_correct_service_worktree_is_reused(self) -> None:
+        preparer = GitRevisionPreparer(self.target, runtime_root=self.runtime)
+        existing = preparer._materialize(self.target_head)
+        with preparer.prepare(self.target_head) as prepared:
+            self.assertEqual(prepared, existing)
+            self.assertEqual(git("rev-parse", "HEAD", cwd=prepared), self.target_head)
+        self.assertFalse(existing.exists())
+
+    def test_unowned_path_and_unknown_revision_fail_without_main_checkout(self) -> None:
+        preparer = GitRevisionPreparer(self.target, runtime_root=self.runtime)
+        with self.assertRaises(KnowledgeGatewayError):
+            with preparer.prepare("0" * 40):
+                self.fail("unknown revision must not be prepared")
+        self.assertEqual(git("rev-parse", "HEAD", cwd=self.target), self.main_head)
+
+        owned = preparer._materialize(self.target_head)
+        preparer._marker(owned).unlink()
+        with self.assertRaises(KnowledgeGatewayError):
+            with preparer.prepare(self.target_head):
+                self.fail("unowned worktree must not be reused")
+        # Restore the test-created marker solely so the service can clean up.
+        preparer._marker(owned).write_text(str(self.target.resolve()), encoding="utf-8")
+        preparer._remove(owned)
+
+    def test_cleanup_failure_does_not_hide_original_review_error(self) -> None:
+        class CleanupFailure(GitRevisionPreparer):
+            def _remove(self, path: Path) -> None:
+                raise KnowledgeGatewayError("cleanup failed")
+
+        preparer = CleanupFailure(self.target, runtime_root=self.runtime)
+        prepared_path: Path | None = None
+        with self.assertRaisesRegex(RuntimeError, "original review error") as captured:
+            with preparer.prepare(self.target_head) as prepared_path:
+                raise RuntimeError("original review error")
+        self.assertTrue(any("cleanup failed" in note for note in captured.exception.__notes__))
+        # The test-owned worktree is removed explicitly after asserting the error.
+        self.assertIsNotNone(prepared_path)
+        GitRevisionPreparer(self.target, runtime_root=self.runtime)._remove(prepared_path)

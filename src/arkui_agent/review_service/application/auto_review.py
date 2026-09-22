@@ -1,7 +1,9 @@
 from __future__ import annotations
 
 from collections.abc import Callable
+from contextlib import AbstractContextManager
 from dataclasses import dataclass
+from pathlib import Path
 from typing import Protocol
 
 from ..domain import (
@@ -28,7 +30,7 @@ class CompletedReviewState(Protocol):
 
 
 class RevisionPreparer(Protocol):
-    def prepare(self, head_sha: str) -> None: ...
+    def prepare(self, head_sha: str) -> AbstractContextManager[Path]: ...
 
 
 @dataclass(frozen=True, slots=True)
@@ -50,7 +52,7 @@ class AutoReviewService:
         preparer: RevisionPreparer,
         authors: frozenset[str],
         policy_version: str,
-        knowledge_context: Callable[[PullRequestContext], AgentKnowledgeContext],
+        knowledge_context: Callable[[PullRequestContext, Path], AgentKnowledgeContext],
         review: Callable[[PullRequestContext, AgentKnowledgeContext], ReviewResult],
         publish: Callable[[ReviewResult], str],
     ) -> None:
@@ -91,17 +93,17 @@ class AutoReviewService:
             if self._state.has_completed(identity):
                 deduplicated += 1
                 continue
-            self._preparer.prepare(context.head_sha)
-            knowledge = self._knowledge_context(context)
-            result = self._review(context, knowledge)
-            if (
-                result.repository != context.repository
-                or result.pr_id != context.pr_id
-                or result.base_sha != context.base_sha
-                or result.head_sha != context.head_sha
-            ):
-                raise ValueError("review result identity differs from PR context")
-            comment_id = self._publish(result)
-            self._state.record_completed(identity, comment_id)
-            published.append((identity, comment_id))
+            with self._preparer.prepare(context.head_sha) as prepared_root:
+                knowledge = self._knowledge_context(context, prepared_root)
+                result = self._review(context, knowledge)
+                if (
+                    result.repository != context.repository
+                    or result.pr_id != context.pr_id
+                    or result.base_sha != context.base_sha
+                    or result.head_sha != context.head_sha
+                ):
+                    raise ValueError("review result identity differs from PR context")
+                comment_id = self._publish(result)
+                self._state.record_completed(identity, comment_id)
+                published.append((identity, comment_id))
         return PollCycleResult(len(summaries), filtered, deduplicated, tuple(published))

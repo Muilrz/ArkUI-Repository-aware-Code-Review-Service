@@ -133,7 +133,7 @@ Structured result 至少表达 status、repository/PR/base/head identity、provi
 - **Status:** In Progress
 - **Scope:** configurable polling/repository/author whitelist；full review identity dedup；JSON/SQLite state；manual/daily knowledge refresh。
 - **Acceptance:** `list → filter → dedup → prepare → review → publish → persist` 可运行；`knowledge update/status` 可用；每日检查 repository、Docs KB revision 和 Live Source；P1/P2 不进入 M5 runtime refresh，unavailable/stale 不阻塞 review。
-- **Current limit:** fetch 只更新 Git metadata；不自动 checkout 或改写外部 ArkUI worktree。目标 HEAD 未对齐时 review 明确失败，真实 revision preparation/daily refresh 验收仍待验证。
+- **Current validation:** 候选 review 在独立 detached runtime worktree 准备目标 head revision，主 ArkUI worktree 不切换 HEAD；Docs KB、Live Source 和 Agent 使用 prepared root，结束后清理。真实 poll/publish/dedup 验收仍待验证。
 
 ### M6 — Demo Validation / Hardening
 

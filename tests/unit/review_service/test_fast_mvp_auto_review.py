@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import tempfile
 import sqlite3
-from contextlib import closing
+from contextlib import closing, contextmanager
 import unittest
 from pathlib import Path
 
@@ -57,11 +57,20 @@ class FakeGitCode:
 
 
 class FakePreparer:
-    def __init__(self, events: list[str]) -> None:
+    def __init__(self, events: list[str], root: Path, *, fail: bool = False) -> None:
         self.events = events
+        self.root = root
+        self.fail = fail
 
-    def prepare(self, head_sha: str) -> None:
+    @contextmanager
+    def prepare(self, head_sha: str):
         self.events.append("prepare")
+        if self.fail:
+            raise RuntimeError("revision prepare failed")
+        try:
+            yield self.root
+        finally:
+            self.events.append("cleanup")
 
 
 class AutoReviewTests(unittest.TestCase):
@@ -72,12 +81,14 @@ class AutoReviewTests(unittest.TestCase):
         self.gitcode = FakeGitCode(context())
         self.events = self.gitcode.events
         self.fail_review = False
+        self.fail_prepare = False
 
     def service(self, *, policy: str = "v1", state=None) -> AutoReviewService:
-        def knowledge(pr: PullRequestContext) -> AgentKnowledgeContext:
+        def knowledge(pr: PullRequestContext, root: Path) -> AgentKnowledgeContext:
             self.events.append("knowledge")
+            self.assertEqual(root, Path(self.temp.name) / "prepared")
             return AgentKnowledgeContext(
-                repository_root=self.temp.name,
+                repository_root=str(root),
                 skill_path="SKILL.md",
                 provider_statuses=(
                     ProviderStatusRef("docs_kb", ProviderStatus.READY, "docs"),
@@ -101,7 +112,11 @@ class AutoReviewTests(unittest.TestCase):
         return AutoReviewService(
             gitcode=self.gitcode,
             state=self.state if state is None else state,
-            preparer=FakePreparer(self.events),
+            preparer=FakePreparer(
+                self.events,
+                Path(self.temp.name) / "prepared",
+                fail=self.fail_prepare,
+            ),
             authors=frozenset({"allowed"}),
             policy_version=policy,
             knowledge_context=knowledge,
@@ -114,7 +129,8 @@ class AutoReviewTests(unittest.TestCase):
         self.assertEqual(cycle.discovered, 1)
         self.assertEqual(len(cycle.published), 1)
         self.assertEqual(
-            self.events, ["list", "detail", "prepare", "knowledge", "review", "publish"]
+            self.events,
+            ["list", "detail", "prepare", "knowledge", "review", "publish", "cleanup"],
         )
         identity, comment_id = cycle.published[0]
         self.assertEqual(comment_id, "comment-1")
@@ -142,11 +158,21 @@ class AutoReviewTests(unittest.TestCase):
         self.fail_review = True
         with self.assertRaises(RuntimeError):
             self.service().poll_once()
+        self.assertEqual(self.events[-1], "cleanup")
         self.assertFalse(self.state.has_completed(identity))
         self.fail_review = False
         self.gitcode.fail_publish = True
         with self.assertRaises(GitCodeProviderError):
             self.service().poll_once()
+        self.assertEqual(self.events[-1], "cleanup")
+        self.assertFalse(self.state.has_completed(identity))
+
+    def test_prepare_failure_stops_agent_and_completed_state(self) -> None:
+        self.fail_prepare = True
+        identity = FastMvpReviewIdentity.from_pr(self.gitcode.pr, "v1")
+        with self.assertRaisesRegex(RuntimeError, "revision prepare failed"):
+            self.service().poll_once()
+        self.assertEqual(self.events, ["list", "detail", "prepare"])
         self.assertFalse(self.state.has_completed(identity))
 
     def test_sqlite_survives_new_instance_and_duplicate_record_fails(self) -> None:
@@ -191,4 +217,4 @@ class AutoReviewTests(unittest.TestCase):
         service = self.service(state=FailingState())
         with self.assertRaises(ResultStoreError):
             service.poll_once()
-        self.assertEqual(self.events[-1], "publish")
+        self.assertEqual(self.events[-2:], ["publish", "cleanup"])

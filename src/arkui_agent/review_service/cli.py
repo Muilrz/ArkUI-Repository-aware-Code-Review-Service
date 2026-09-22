@@ -99,11 +99,13 @@ def build_parser() -> argparse.ArgumentParser:
     poll.add_argument("--interval", type=_positive_integer, help="seconds; defaults to ARKUI_REVIEW_POLL_INTERVAL or 600")
     poll.add_argument("--policy-version", help="defaults to ARKUI_REVIEW_POLICY_VERSION or v1")
     poll.add_argument("--state", help="SQLite path; defaults to var/review-state.sqlite")
+    poll.add_argument("--worktree-cache", help="detached runtime worktrees; defaults to var/worktrees")
     poll.add_argument("--agent", default="codex")
     poll.add_argument("--once", action="store_true", help="run one cycle and exit")
     knowledge = subparsers.add_parser("knowledge", help="inspect or update target repository knowledge")
     knowledge.add_argument("action", choices=("update", "status"))
     knowledge.add_argument("--repository-root", help="defaults to ARKUI_REPO_ROOT")
+    knowledge.add_argument("--worktree-cache", help="detached runtime worktrees; defaults to var/worktrees")
     return parser
 
 
@@ -126,7 +128,9 @@ def run(
     if args.command == "knowledge":
         try:
             root = _required_root(args.repository_root, environment)
-            preparer = GitRevisionPreparer(root)
+            preparer = GitRevisionPreparer(
+                root, runtime_root=Path(args.worktree_cache or "var/worktrees")
+            )
             if args.action == "update":
                 preparer.update()
             print(json.dumps(preparer.status(), sort_keys=True), file=output)
@@ -296,16 +300,18 @@ def _run_poll(
     state_path = Path(args.state or "var/review-state.sqlite")
     adapter = (adapter_factory or _create_adapter)(repository, SecretValue(token_text))
     runner = (agent_runner_factory or _create_agent_runner)(args.agent)
-    preparer = GitRevisionPreparer(root)
+    preparer = GitRevisionPreparer(
+        root, runtime_root=Path(args.worktree_cache or "var/worktrees")
+    )
     service = AutoReviewService(
         gitcode=adapter,
         state=SqliteReviewState(state_path),
         preparer=preparer,
         authors=authors,
         policy_version=policy,
-        knowledge_context=lambda context: (
+        knowledge_context=lambda context, prepared_root: (
             knowledge_context_factory or _prepare_knowledge_context
-        )(context, root),
+        )(context, prepared_root),
         review=lambda context, knowledge: CodeAgentReviewService(runner).review(
             context, knowledge=knowledge
         ),

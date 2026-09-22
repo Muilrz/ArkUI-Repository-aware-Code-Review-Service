@@ -338,11 +338,13 @@ class FastMvpCliTests(unittest.TestCase):
         parser = build_parser()
         poll = parser.parse_args(
             ["poll", "--repository", CONTEXT.repository, "--authors", "hct95",
-             "--interval", "600", "--policy-version", "v2", "--once"]
+             "--interval", "600", "--policy-version", "v2",
+             "--worktree-cache", "C:/runtime/worktrees", "--once"]
         )
         self.assertEqual(poll.command, "poll")
         self.assertTrue(poll.once)
         self.assertEqual(poll.interval, 600)
+        self.assertEqual(poll.worktree_cache, "C:/runtime/worktrees")
         status = parser.parse_args(["knowledge", "status"])
         self.assertEqual(status.action, "status")
         update = parser.parse_args(["knowledge", "update"])
