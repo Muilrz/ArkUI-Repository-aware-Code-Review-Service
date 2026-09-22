@@ -19,7 +19,7 @@ query(KnowledgeQuery) -> KnowledgeProviderResult
 
 每个结果携带 `ProviderStatusRef` 和可用时的 `KnowledgeEvidence`。Evidence 包含 provider、revision、source、locator 与 content；non-ready provider 不得暴露可用 evidence。
 
-`ReviewKnowledgeFacade` 要求 Docs KB 与 Live Source，并允许显式配置 optional P1/P2。当前 Fast-MVP CLI runtime 只配置前两者：
+`ReviewKnowledgeFacade` 要求 Docs KB 与 Live Source，并保留显式配置 optional P1/P2 的历史接口能力。当前使用的 Fast-MVP CLI runtime 只配置前两者；P1/P2 不属于当前产品路径或开发计划：
 
 - `DocsKbProvider`：调用目标 repository 的 `docs/kb_search.py <term> --detail`，以 `docs/context_registry.json` SHA-256 标识 KB revision；
 - `LiveSourceProvider`：每次查询前验证 Git HEAD 等于 review head 且 tracked worktree clean，再通过 `rg` 或 filesystem read 返回证据；

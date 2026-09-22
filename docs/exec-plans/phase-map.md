@@ -4,14 +4,14 @@
 
 本文把 [Technical Roadmap](../architecture/technical-roadmap.md) 转换为当前可验收的工程阶段。Roadmap 决定产品方向和架构边界；本文件决定阶段与 Definition of Done；`active/` execution plan 决定当前 milestone 的具体范围。
 
-**Fast-MVP — GitCode ArkUI Automated Code Review** 已完成 M0–M6。P0/P1/P2、P3-A～E 和 R0 已完成能力保持历史状态；原完整自研 R0–R6 路线不再作为执行顺序，R1–R6 被 Fast-MVP 取代。下一阶段尚未定义。
+**Fast-MVP — GitCode ArkUI Automated Code Review** 已完成 M0–M6，是当前使用的产品版本。P0/P1/P2、P3-A～E 和 R0 已完成能力保持历史状态；原完整自研 R0–R6 路线不再作为执行顺序，R1–R6 被 Fast-MVP 取代。当前没有后续开发计划。
 
 ## 2. Global principles
 
 - 优先复用现成 GitCode API/MCP、Codex CLI 和经 smoke 验证的外部工具，不自行开发完整 MCP Server。
 - 不建设 generic Agent Runtime。自动 polling、author filter、full identity dedup、knowledge refresh 和 state persistence 属于 lightweight service/CLI。
 - Docs KB + Live Source 是最低可用知识路径；Live Source 对目标 repository revision 的源码事实具有最终权威。
-- P1/P2 是架构上的 optional enhancement，当前 Fast-MVP runtime 不配置；若未来接入，stale、unavailable 或 refresh failure 不得阻塞 review，也不得被当作当前 revision 的确定事实。
+- P1/P2 是保留的历史实现，不进入当前 Fast-MVP runtime 或开发计划。
 - Review 只在有足够源码证据时产生 finding；zero findings 是合法成功结果，且必须与 Agent failure 区分。
 - 阶段只实现 MVP 闭环所需能力，不以长期平台化要求扩大 scope。
 
@@ -20,8 +20,8 @@
 | Phase / route | Status | Continuing role |
 | --- | --- | --- |
 | P0 — Engineering Foundation | Completed | 工程、配置、测试和可观测基础可复用 |
-| P1 — Repository Intelligence | Completed | 未来 optional P1 provider；当前 runtime 不接入；保留 frozen contracts/fixtures/baseline |
-| P2 — ArkUI Code Graph | Completed | 未来 optional P2 provider；当前 runtime 不接入；保留 frozen semantics/fixtures/baseline |
+| P1 — Repository Intelligence | Completed | 历史实现；当前 runtime 不接入；保留 frozen contracts/fixtures/baseline |
+| P2 — ArkUI Code Graph | Completed | 历史实现；当前 runtime 不接入；保留 frozen semantics/fixtures/baseline |
 | P3-A～E — Task / Change Context contracts | Completed milestones in a superseded phase | 已实现 contract 保留并可选择性复用 |
 | P3 remaining route | Superseded | 不继续 P3-F incremental lifecycle/G/H/I |
 | P4/P5 old route | Superseded before execution | 不建设 Agent Runtime 或旧 Agent/UT capability |
@@ -106,6 +106,6 @@ R0 的 `Completed` 是已验收实现事实；“route superseded”表示它不
 
 ## 11. Dependency and execution rules
 
-Fast-MVP 交付顺序为 `M0 → M1 → M2 → M3 → M4 → M5 → M6`。计划保存在 [`completed/Fast-MVP-code-review.md`](completed/Fast-MVP-code-review.md)，M0–M6 已完成；`active/` 下没有获批准的下一阶段计划。
+Fast-MVP 交付顺序为 `M0 → M1 → M2 → M3 → M4 → M5 → M6`。计划保存在 [`completed/Fast-MVP-code-review.md`](completed/Fast-MVP-code-review.md)，M0–M6 已完成；`active/` 下没有后续开发计划。当前使用已验收的 Fast-MVP。
 
 Status 统一使用 `Not Started`、`In Progress`、`Blocked`、`Completed`、`Superseded`。开始实现时只将所选 milestone 设为 `In Progress`；只有 Acceptance Criteria 与必需验证全部通过才能标记 `Completed`。

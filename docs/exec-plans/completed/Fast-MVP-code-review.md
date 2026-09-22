@@ -3,7 +3,7 @@
 - **Route Status:** Completed
 - **Final milestone:** M6 — Demo Validation / Hardening (Completed)
 - **Supersedes:** incomplete R1–R6 complete Service/MCP route
-- **Reuses:** completed P0 and R0 foundation where useful; preserves P1/P2/P3-A～E historical contracts for future optional use
+- **Reuses:** completed P0 and R0 foundation where useful; preserves P1/P2/P3-A～E historical contracts
 - **Architecture:** [Technical Roadmap](../../architecture/technical-roadmap.md)
 - **Phase boundary:** [Phase Map](../phase-map.md)
 
@@ -65,7 +65,7 @@ GitCode PR
 - **OpenCodeReview:** 可选；只在 smoke 后证明能显著缩短交付时复用，不成为 MVP 必需依赖。
 - **ArkUI target repository:** 由显式配置提供，默认只读，不 vendor 到本仓库。
 - **Docs KB / `kb_search`:** MVP 必需的领域知识来源。
-- **P1/P2:** 本仓库已有历史能力，保留为未来可选接入；未进入本次 runtime。
+- **P1/P2:** 本仓库已有历史能力，未进入交付的 Fast-MVP runtime。
 
 Credentials 不进入仓库、日志、structured findings 或持久化 review result。外部工具失败必须映射为可诊断 failure，不能被当作 zero findings。
 
@@ -76,9 +76,9 @@ Credentials 不进入仓库、日志、structured findings 或持久化 review r
 1. 读取 changed diff 与修改函数上下文；
 2. 用 Docs KB / `kb_search` 获取架构和领域规则；
 3. 用 Git、filesystem、`rg` 核实目标 revision 的真实源码；
-4. 对每条 finding 保留可复核 evidence。P1/P2 的按需查询是未来显式接入 optional provider 时的扩展，不属于当前 runtime。
+4. 对每条 finding 保留可复核 evidence。P1/P2 不属于当前 runtime。
 
-Live Source 是当前源码事实的最终 source of truth。Docs KB + Live Source 可独立完成 review。若未来配置 P1/P2，只有在 revision 对齐或兼容语义明确时才能支持 current-fact claim；否则排除该 claim。
+Live Source 是当前源码事实的最终 source of truth。Docs KB + Live Source 可独立完成 review。P1/P2 历史 provider contract 保留在对应 spec 中，不作为当前产品知识路径。
 
 ## Review categories and result contract
 

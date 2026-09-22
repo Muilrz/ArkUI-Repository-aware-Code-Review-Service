@@ -2,7 +2,7 @@
 
 ## 1. 当前产品方向
 
-已完成的产品路线是 **Fast-MVP — GitCode ArkUI Automated Code Review**。目标是交付可运行、可演示的最小闭环，而不是先完成一套完整自研平台：
+当前使用的产品版本是已完成的 **Fast-MVP — GitCode ArkUI Automated Code Review**：
 
 ```text
 GitCode PR
@@ -11,13 +11,13 @@ GitCode PR
   → full review identity dedup
   → prepare target ArkUI revision
   → Codex / Code Agent + ArkUI Code Review Skill
-  → Docs KB + Live Source + optional P1/P2
+  → Docs KB + Live Source
   → structured findings
   → GitCode PR summary comment
   → persist completed review identity
 ```
 
-图中的 P1/P2 是保留的未来可选增强；已验收的 CLI runtime 只连接 Docs KB 与 Live Source。
+P1/P2 是保留的历史实现，不参与当前产品运行链路。
 
 Fast-MVP 优先复用现成 GitCode API/MCP、Codex CLI，以及经 smoke 验证后确有价值的 OpenCodeReview 能力。当前不自行建设完整 MCP Server，也不建设 generic Agent Runtime。自动 polling、author filter、完整 review identity dedup、knowledge refresh 和状态持久化属于轻量 Fast-MVP service/CLI，不属于 Skill 或外部 Agent。
 
@@ -41,9 +41,7 @@ skills/arkui-code-review/
              ▼
 Repository evidence
 ├── Docs KB / kb_search          required
-├── Live Source / Git / rg       required and authoritative
-├── P1 Repository Intelligence  optional enhancement
-└── P2 ArkUI Code Graph          optional enhancement
+└── Live Source / Git / rg       required and authoritative
              │
              ▼
 Structured review result → GitCode summary comment
@@ -72,14 +70,11 @@ MVP 可以复用 R0 已实现的 platform-neutral domain model、ports、configu
 
 ### 3.3 Knowledge strategy
 
-MVP 的最低可用知识路径是 `Docs KB + Live Source`：
+Fast-MVP 的知识路径是 `Docs KB + Live Source`：
 
 - Docs KB / `kb_search` 提供 ArkUI 架构、组件、领域规则和术语背景。
 - Live Source 使用 Git、filesystem 和 `rg` 读取目标 repository 当前 revision；它是源码事实的最终 source of truth。
-- P1 提供 symbol、definition、references、callers、callees 和 tests，是可选增强。
-- P2 提供 ArkUI-specific role、framework relations 和 bounded traces，是可选增强。
-
-当前 Fast-MVP runtime 只使用 Docs KB 与 Live Source。若未来配置 optional P1/P2，其 stale、unavailable 或 refresh 失败不得阻塞 review；旧 revision facts 不能作为当前 revision 的确定事实。Live Source 无法准备到目标 revision 时则不能伪装成功。
+Docs KB 不可用时，只有 Live Source 与 review policy 的证据足够才能继续 degraded review。Live Source 无法准备到目标 revision 时不能伪装成功。P1/P2 不参与当前知识准备、review 或 refresh。
 
 Knowledge update 支持手动 `arkui-review knowledge update`、`arkui-review knowledge status` 和每日自动 refresh。每日最低刷新 ArkUI repository 与 Docs KB revision，并使 Live Source 指向目标 revision；当前 runtime 不配置或刷新 P1/P2。
 
@@ -97,7 +92,7 @@ Knowledge update 支持手动 `arkui-review knowledge update`、`arkui-review kn
 
 ### P0/P1/P2
 
-P0、P1、P2 是已完成历史基础。completed plans、specs、tests、frozen fixtures 和 evaluation baseline 均保留：P1/P2 保留为未来 optional provider 能力，当前 runtime 不接入，也不删除或重写 frozen semantics。
+P0、P1、P2 是已完成历史基础。completed plans、specs、tests、frozen fixtures 和 evaluation baseline 均保留；P1/P2 不进入当前 Fast-MVP 产品，也不删除或重写 frozen semantics。
 
 ### P3-A～E
 
@@ -123,8 +118,8 @@ M0 Foundation & External Tool Smoke
  → M6 Demo Validation & Hardening
 ```
 
-Fast-MVP 的阶段边界以 [Phase Map](../exec-plans/phase-map.md) 为准。已完成计划是 [Fast-MVP-code-review.md](../exec-plans/completed/Fast-MVP-code-review.md)；M0–M6 已完成。当前 CLI runtime 使用 Docs KB 与 Live Source；P1/P2 仍是架构上的可选增强，不属于已验收 runtime 路径。下一阶段尚未定义。
+Fast-MVP 的阶段边界以 [Phase Map](../exec-plans/phase-map.md) 为准。已完成计划是 [Fast-MVP-code-review.md](../exec-plans/completed/Fast-MVP-code-review.md)；M0–M6 已完成。当前使用这一 MVP 版本，CLI runtime 使用 Docs KB 与 Live Source；没有后续开发计划。
 
-## 6. MVP 之后
+## 6. 当前使用边界
 
-只有在真实 GitCode PR 闭环验证了价值、质量与操作需求后，才评估是否把 lightweight CLI/service 重新抽象为更完整的 service architecture、内部 MCP Server、durable job system 或更严格的 provider platform。该评估不得追溯修改 P1/P2/P3/R0 已实现事实，也不得把 Agent Runtime 重新引入当前产品边界。
+已验收的 Fast-MVP 是当前使用版本。日常使用沿用现有 CLI/service、GitCode adapter、Codex runner、ArkUI Review Skill、Docs KB 与 Live Source。P1/P2、完整 Repository Knowledge Service、内部 MCP Server、durable job system 和 generic Agent Runtime 均不属于当前产品范围。历史 P1/P2/P3/R0 实现事实与验收记录继续保留。

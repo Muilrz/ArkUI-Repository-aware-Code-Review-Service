@@ -49,14 +49,14 @@
 历史基础：
 
 - P0 — Engineering Foundation：Completed
-- P1 — Repository Intelligence：Completed，保留为未来 optional `P1Provider`；当前 Fast-MVP runtime 不接入
-- P2 — ArkUI Code Graph：Completed，保留为未来 optional `P2Provider`；当前 Fast-MVP runtime 不接入，frozen semantics、fixtures 和 baseline 不重写
+- P1 — Repository Intelligence：Completed，历史实现与 contract 保留；当前 Fast-MVP 不接入
+- P2 — ArkUI Code Graph：Completed，历史实现与 contract 保留；当前 Fast-MVP 不接入，frozen semantics、fixtures 和 baseline 不重写
 - P3-A～E：已完成 contract 继续保留为当前实现事实
 - 原 P3 后续路线：`Superseded`；不继续开发 P3-F incremental lifecycle、P4 Agent Runtime 或旧 P5 Engineering Agent 路线
 
 R0 — Review Service Foundation 已完成，计划和 specs 继续记录已实现事实并可被复用。原完整自研 R0–R6 Service/MCP 路线不再作为当前执行主线；R1–R6 为 `Superseded by Fast-MVP route`，不得继续按旧顺序实施或标记 Completed。
 
-当前 active route：`Fast-MVP — GitCode ArkUI Automated Code Review`：
+当前使用的产品版本：`Fast-MVP — GitCode ArkUI Automated Code Review`：
 
 - M0 — Fast-MVP Foundation & External Tool Smoke
 - M1 — GitCode Minimal Integration
@@ -66,7 +66,7 @@ R0 — Review Service Foundation 已完成，计划和 specs 继续记录已实�
 - M5 — Auto Polling & Knowledge Refresh
 - M6 — Demo Validation & Hardening
 
-Fast-MVP M0–M6 已完成，计划保存在 `docs/exec-plans/completed/Fast-MVP-code-review.md`。当前没有已批准的下一阶段 active plan；不因 M6 完成而自动开始后续开发。
+Fast-MVP M0–M6 已完成，计划保存在 `docs/exec-plans/completed/Fast-MVP-code-review.md`。当前使用这一 MVP 版本；`active/` 下没有后续开发计划。
 
 ## Core Architecture Boundaries
 
@@ -82,9 +82,8 @@ Fast-MVP M0–M6 已完成，计划保存在 `docs/exec-plans/completed/Fast-MVP
 ### Knowledge and evidence
 
 - Docs KB / `kb_search` 与 Live Source 是 MVP 必选；Live Source 使用目标 repository revision 的 Git、filesystem 和 `rg`，是源码事实的最终 source of truth。
-- P1 继续提供 symbol / definition / references / callers / callees / tests；P2 继续提供 ArkUI-specific semantic relations，二者均为 optional enhancement。
-- 当前 Fast-MVP CLI runtime 只配置 ArkUI Review Skill、Docs KB / `kb_search.py` 与 Git / `rg` / filesystem Live Source；P1/P2 不作为 M6 runtime 验收依赖。
-- 若未来显式配置 optional P1/P2 provider，其 stale、unavailable 或 refresh 失败不得阻塞 review；旧 revision facts 不能作为当前 revision 的确定事实。当前 runtime 的 degraded review 以 Docs KB 状态和 Live Source 证据为准。
+- 当前 Fast-MVP CLI runtime 使用 ArkUI Review Skill、Docs KB / `kb_search.py` 与 Git / `rg` / filesystem Live Source；P1/P2 不进入当前产品运行链路。
+- 当前 runtime 的 degraded review 以 Docs KB 状态和 Live Source 证据为准。
 - knowledge status 应按来源报告 revision、ready/stale/unavailable/error 和必要 diagnostics；不得以统一 snapshot readiness 作为 review 的硬门槛。
 - 第一阶段 review category 为 Stability、Memory / Resource / Lifetime、Functional Correctness。Review 允许成功地产生 zero findings；无足够源码证据不得制造 finding。
 
