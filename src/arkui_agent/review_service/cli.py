@@ -6,6 +6,7 @@ import os
 import sys
 import time
 from collections.abc import Callable, Mapping, Sequence
+from contextlib import nullcontext
 from pathlib import Path
 from typing import Protocol, TextIO
 
@@ -85,7 +86,11 @@ def build_parser() -> argparse.ArgumentParser:
     )
     review.add_argument(
         "--repository-root",
-        help="target Git worktree at the PR head; defaults to ARKUI_REPO_ROOT",
+        help="target Git repository; review prepares the PR head in a detached worktree; defaults to ARKUI_REPO_ROOT",
+    )
+    review.add_argument(
+        "--worktree-cache",
+        help="detached runtime worktrees; defaults to var/worktrees",
     )
     review.add_argument(
         "--publish",
@@ -168,22 +173,31 @@ def run(
             repository_root = args.repository_root or environment.get(
                 "ARKUI_REPO_ROOT"
             )
-            knowledge = (
-                None
+            prepared = (
+                nullcontext(None)
                 if repository_root is None
-                else (knowledge_context_factory or _prepare_knowledge_context)(
-                    context, Path(repository_root)
+                else GitRevisionPreparer(
+                    _required_root(repository_root, environment),
+                    runtime_root=Path(args.worktree_cache or "var/worktrees"),
+                ).prepare(context.head_sha)
+            )
+            with prepared as prepared_root:
+                knowledge = (
+                    None
+                    if prepared_root is None
+                    else (knowledge_context_factory or _prepare_knowledge_context)(
+                        context, prepared_root
+                    )
                 )
-            )
-            result = CodeAgentReviewService(runner_factory(args.agent)).review(
-                context,
-                knowledge=knowledge,
-            )
-            comment_id = (
-                ReviewPublishingService(adapter).publish(result)
-                if args.publish
-                else None
-            )
+                result = CodeAgentReviewService(runner_factory(args.agent)).review(
+                    context,
+                    knowledge=knowledge,
+                )
+                comment_id = (
+                    ReviewPublishingService(adapter).publish(result)
+                    if args.publish
+                    else None
+                )
         except (ReviewServiceError, ValueError) as error:
             print(f"error: {error}", file=errors)
             return 1

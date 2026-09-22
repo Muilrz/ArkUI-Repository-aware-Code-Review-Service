@@ -30,7 +30,7 @@ Live Source stale/unavailable/error 是 hard failure。Docs KB 非 ready 时可�
 
 ## Agent integration and result validation
 
-设置 `--repository-root` 或 `ARKUI_REPO_ROOT` 后，CLI 在调用 Agent 前执行 knowledge preflight，并把 backend-neutral `AgentKnowledgeContext` 交给 `CodeAgentRunner`。不提供 repository root 时保留 M2 diff-only behavior。
+设置 `--repository-root` 或 `ARKUI_REPO_ROOT` 后，CLI 先将 PR head 准备为独立 detached runtime worktree，再执行 knowledge preflight，并把 backend-neutral `AgentKnowledgeContext` 交给 `CodeAgentRunner`。不提供 repository root 时保留 M2 diff-only behavior。
 
 Codex 是首个验证 adapter，不是 Skill 或 knowledge API 的依赖。其 repository-aware mode 在已验证 worktree 中以 read-only sandbox 运行，并使用 JSONL event trace 验证 Agent 实际执行：
 
@@ -43,4 +43,3 @@ Codex 是首个验证 adapter，不是 Skill 或 knowledge API 的依赖。其 r
 ## OpenCodeReview decision
 
 以 OpenCodeReview `v1.12.7` Delegation Mode 执行只读 smoke：`delegate preview` 能确定 changed-file scope，`delegate rule` 能解析 per-file rules，且无需 LLM 配置。默认 scope 会排除 Markdown 与 tests，工具本身也不提供 ArkUI Docs KB、revision freshness 或 P1/P2 evidence contract。因此 M3 不接入其 runtime，仅把它保留为未来可选 scope/rule 辅助；它不是 availability gate。
-

@@ -1,7 +1,7 @@
 # Fast-MVP — GitCode ArkUI Automated Code Review
 
 - **Route Status:** Active
-- **Current milestone:** M5 — Auto Polling & Knowledge Refresh
+- **Current milestone:** M6 — Demo Validation / Hardening
 - **Current milestone status:** In Progress
 - **Supersedes:** incomplete R1–R6 complete Service/MCP route
 - **Reuses:** completed P0/P1/P2, P3-A～E contracts, and R0 Review Service Foundation where useful
@@ -130,16 +130,17 @@ Structured result 至少表达 status、repository/PR/base/head identity、provi
 
 ### M5 — Auto Polling & Knowledge Refresh
 
-- **Status:** In Progress
+- **Status:** Completed
 - **Scope:** configurable polling/repository/author whitelist；full review identity dedup；JSON/SQLite state；manual/daily knowledge refresh。
 - **Acceptance:** `list → filter → dedup → prepare → review → publish → persist` 可运行；`knowledge update/status` 可用；每日检查 repository、Docs KB revision 和 Live Source；P1/P2 不进入 M5 runtime refresh，unavailable/stale 不阻塞 review。
-- **Current validation:** 候选 review 在独立 detached runtime worktree 准备目标 head revision，主 ArkUI worktree 不切换 HEAD；Docs KB、Live Source 和 Agent 使用 prepared root，结束后清理。真实 poll/publish/dedup 验收仍待验证。
+- **Validation:** 候选 review 在独立 detached runtime worktree 准备目标 head revision，主 ArkUI worktree 不切换 HEAD；Docs KB、Live Source 和 Agent 使用 prepared root，结束后清理。本轮 M5 targeted tests 为 25 passed、0 failed。用户确认 `muil793608902/arkui-review-test#1` 首次 poll 发现并发布 comment `8cf647c450d12e0eb4703c954a702c30ba7f3bac`，相同 identity 的第二次 poll 被 dedup，未重复发布。
 
 ### M6 — Demo Validation / Hardening
 
-- **Status:** Not Started
+- **Status:** In Progress
 - **Scope:** 只验证并修复真实 MVP 闭环。
 - **Acceptance:** manual/poll trigger、whitelist、interval、same-head suppression、new-head review、manual knowledge update、degraded review 和 GitCode comment 均有真实验证证据。
+- **Current validation:** 公开读取真实 `muil793608902/arkui-review-test#1` 成功，base/head 与 M5 completed identity 一致。手动 repository-aware review 已复用 detached revision worktree 并补充 targeted tests；真实手动 Codex、new-head、whitelist/interval、knowledge update 与本轮 comment 验收仍待执行。
 
 ## Acceptance Criteria
 

@@ -2,6 +2,8 @@
 
 M5 单进程轮询使用 `arkui-review poll`（可加 `--once`）。repository、author whitelist、polling interval、policy version、目标 Git repository、runtime worktree cache 和 SQLite path 可通过 CLI 或环境配置。缺少 whitelist、token 或目标 Git repository 即失败。普通 `review` 命令继续保持 M4 显式 `--publish` 语义。
 
+M6 的手动 repository-aware `review --agent` 也复用 `GitRevisionPreparer`：提供 `--repository-root`（或 `ARKUI_REPO_ROOT`）时，CLI 从该目标 Git repository 准备 PR head 的独立 detached runtime worktree，可用 `--worktree-cache` 指定缓存目录。knowledge preflight、Agent 和可选 publish 均在该 worktree 生命周期内进行，退出时清理；开发者主目标 worktree 的 HEAD 不会被切换。未指定 repository root 的 diff-only review 行为不变。
+
 `FastMvpReviewIdentity` 是 M5 dedup key：`repository + pr_id + base_sha + head_sha + review_policy_version`。这是独立于已冻结 R0 四字段 `ReviewIdentity` 的 Fast-MVP contract。base SHA 变化而 head 不变必须重新 review；policy version 变化亦然。
 
 每轮：list open PR → author filter → summary identity lookup → detail/changed diff → 复核 author 与完整 identity → 再次 lookup → fetch/prepare revision → knowledge preflight → Code Agent review → summary comment publish → SQLite completed record。任何 review/publish failure 不写 completed；publish 成功而 SQLite 写入失败时显式报错，可能需要人工检查已发布评论后再重试。

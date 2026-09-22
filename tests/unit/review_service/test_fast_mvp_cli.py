@@ -5,10 +5,7 @@ import unittest
 
 from arkui_agent.review_service.cli import build_parser, run
 from arkui_agent.review_service.domain import (
-    AgentKnowledgeContext,
     AgentReviewRequest,
-    ProviderStatus,
-    ProviderStatusRef,
     PullRequestContext,
     ReviewResult,
     ReviewResultStatus,
@@ -188,44 +185,6 @@ class FastMvpCliTests(unittest.TestCase):
         self.assertEqual(result, 1)
         self.assertIn("unsupported agent backend: claude", stderr.getvalue())
 
-    def test_repository_root_enables_knowledge_aware_agent_request(self) -> None:
-        runner = StaticAgentRunner()
-        statuses = (
-            ProviderStatusRef("docs_kb", ProviderStatus.READY, "sha256:docs"),
-            ProviderStatusRef(
-                "live_source", ProviderStatus.READY, CONTEXT.head_sha
-            ),
-            ProviderStatusRef("p1", ProviderStatus.UNAVAILABLE),
-            ProviderStatusRef("p2", ProviderStatus.UNAVAILABLE),
-        )
-
-        result = run(
-            [
-                "review",
-                "--repository",
-                CONTEXT.repository,
-                "--pr",
-                CONTEXT.pr_id,
-                "--agent",
-                "codex",
-                "--repository-root",
-                "C:/target/arkui",
-            ],
-            environ={},
-            stdout=io.StringIO(),
-            adapter_factory=lambda repository, token: StaticAdapter(),
-            agent_runner_factory=lambda backend: runner,
-            knowledge_context_factory=lambda context, root: AgentKnowledgeContext(
-                repository_root=str(root),
-                skill_path="C:/skill/SKILL.md",
-                provider_statuses=statuses,
-            ),
-        )
-
-        self.assertEqual(result, 0)
-        self.assertIsNotNone(runner.last_request)
-        self.assertEqual(runner.last_request.knowledge.provider_statuses, statuses)
-
     def test_agent_review_without_publish_never_calls_write_api(self) -> None:
         adapter = StaticAdapter(publish_error=True)
 
@@ -336,6 +295,11 @@ class FastMvpCliTests(unittest.TestCase):
 
     def test_m5_poll_and_knowledge_cli_arguments(self) -> None:
         parser = build_parser()
+        manual = parser.parse_args(
+            ["review", "--pr", "1", "--agent", "codex",
+             "--worktree-cache", "C:/runtime/manual"]
+        )
+        self.assertEqual(manual.worktree_cache, "C:/runtime/manual")
         poll = parser.parse_args(
             ["poll", "--repository", CONTEXT.repository, "--authors", "hct95",
              "--interval", "600", "--policy-version", "v2",

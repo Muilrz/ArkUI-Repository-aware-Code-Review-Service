@@ -3,9 +3,20 @@ from __future__ import annotations
 import subprocess
 import tempfile
 import unittest
+import io
 from pathlib import Path
 
 from arkui_agent.review_service.adapters import GitRevisionPreparer
+from arkui_agent.review_service.cli import run
+from arkui_agent.review_service.domain import (
+    AgentKnowledgeContext,
+    AgentReviewRequest,
+    ProviderStatus,
+    ProviderStatusRef,
+    PullRequestContext,
+    ReviewResult,
+    ReviewResultStatus,
+)
 from arkui_agent.review_service.ports import KnowledgeGatewayError
 
 
@@ -105,3 +116,61 @@ class GitRevisionPreparerTests(unittest.TestCase):
         # The test-owned worktree is removed explicitly after asserting the error.
         self.assertIsNotNone(prepared_path)
         GitRevisionPreparer(self.target, runtime_root=self.runtime)._remove(prepared_path)
+
+    def test_manual_review_uses_detached_head_and_keeps_main_checkout(self) -> None:
+        context = PullRequestContext(
+            repository="owner/repo", pr_id="1", title="change", author="author",
+            base_sha=self.main_head, head_sha=self.target_head,
+            changed_files=("a.cpp",), diff="@@ -1 +1 @@\n-old\n+new",
+        )
+        prepared_paths: list[Path] = []
+
+        class Adapter:
+            def get_pr_context(self, pr_id: str | int) -> PullRequestContext:
+                if str(pr_id) != "1":
+                    raise AssertionError("wrong PR")
+                return context
+
+        class Runner:
+            def review(self, request: AgentReviewRequest) -> ReviewResult:
+                assert request.knowledge is not None
+                root = Path(request.knowledge.repository_root)
+                prepared_paths.append(root)
+                if git("rev-parse", "HEAD", cwd=root) != context.head_sha:
+                    raise AssertionError("Agent did not receive PR head")
+                if (root / "a.cpp").read_text(encoding="utf-8") != "new":
+                    raise AssertionError("Agent did not receive updated source")
+                return ReviewResult(
+                    ReviewResultStatus.SUCCESS, request.repository, request.pr_id,
+                    request.base_sha, request.head_sha, (),
+                    request.knowledge.degraded, request.knowledge.provider_statuses,
+                )
+
+        def knowledge(pr: PullRequestContext, root: Path) -> AgentKnowledgeContext:
+            self.assertEqual(pr.head_sha, self.target_head)
+            self.assertEqual(git("rev-parse", "HEAD", cwd=root), self.target_head)
+            return AgentKnowledgeContext(
+                repository_root=str(root), skill_path="SKILL.md",
+                provider_statuses=(
+                    ProviderStatusRef("docs_kb", ProviderStatus.READY, "sha256:docs"),
+                    ProviderStatusRef("live_source", ProviderStatus.READY, pr.head_sha),
+                    ProviderStatusRef("p1", ProviderStatus.UNAVAILABLE),
+                    ProviderStatusRef("p2", ProviderStatus.UNAVAILABLE),
+                ),
+            )
+
+        output = io.StringIO()
+        result = run(
+            ["review", "--repository", context.repository, "--pr", "1",
+             "--agent", "codex", "--repository-root", str(self.target),
+             "--worktree-cache", str(self.runtime)],
+            environ={}, stdout=output,
+            adapter_factory=lambda repository, token: Adapter(),
+            agent_runner_factory=lambda backend: Runner(),
+            knowledge_context_factory=knowledge,
+        )
+        self.assertEqual(result, 0)
+        self.assertEqual(git("rev-parse", "HEAD", cwd=self.target), self.main_head)
+        self.assertEqual(len(prepared_paths), 1)
+        self.assertFalse(prepared_paths[0].exists())
+        self.assertEqual(ReviewResult.from_json(output.getvalue()).head_sha, self.target_head)
