@@ -2,7 +2,7 @@
 
 ## 1. 当前产品方向
 
-当前执行路线是 **Fast-MVP — GitCode ArkUI Automated Code Review**。目标是在极短时间内交付可运行、可演示的最小闭环，而不是先完成一套完整自研平台：
+已完成的产品路线是 **Fast-MVP — GitCode ArkUI Automated Code Review**。目标是交付可运行、可演示的最小闭环，而不是先完成一套完整自研平台：
 
 ```text
 GitCode PR
@@ -17,9 +17,11 @@ GitCode PR
   → persist completed review identity
 ```
 
+图中的 P1/P2 是保留的未来可选增强；已验收的 CLI runtime 只连接 Docs KB 与 Live Source。
+
 Fast-MVP 优先复用现成 GitCode API/MCP、Codex CLI，以及经 smoke 验证后确有价值的 OpenCodeReview 能力。当前不自行建设完整 MCP Server，也不建设 generic Agent Runtime。自动 polling、author filter、完整 review identity dedup、knowledge refresh 和状态持久化属于轻量 Fast-MVP service/CLI，不属于 Skill 或外部 Agent。
 
-本文件是当前长期产品方向和架构边界的最高层 source of truth。阶段与 Definition of Done 见 [Phase Map](../exec-plans/phase-map.md)，当前具体执行见 [Fast-MVP execution plan](../exec-plans/active/Fast-MVP-code-review.md)。既有专题架构与 [ADR-0005](../decisions/ADR-0005-code-review-service-pivot.md) 保留旧 R0–R6 路线的设计价值和历史背景，但不再决定当前执行顺序。
+本文件是当前长期产品方向和架构边界的最高层 source of truth。阶段与 Definition of Done 见 [Phase Map](../exec-plans/phase-map.md)，已完成的具体执行见 [Fast-MVP execution plan](../exec-plans/completed/Fast-MVP-code-review.md)。既有专题架构与 [ADR-0005](../decisions/ADR-0005-code-review-service-pivot.md) 保留旧 R0–R6 路线的设计价值和历史背景，但不再决定当前执行顺序。
 
 ## 2. Fast-MVP 架构
 
@@ -77,9 +79,9 @@ MVP 的最低可用知识路径是 `Docs KB + Live Source`：
 - P1 提供 symbol、definition、references、callers、callees 和 tests，是可选增强。
 - P2 提供 ArkUI-specific role、framework relations 和 bounded traces，是可选增强。
 
-P1/P2 stale、unavailable 或 refresh 失败时不得阻塞 review。旧 revision 的 P1/P2 facts 不能作为当前 revision 的确定事实；应刷新、排除，或明确报告 degraded 后使用 Docs KB + Live Source 继续。Live Source 无法准备到目标 revision 时则不能伪装成功。
+当前 Fast-MVP runtime 只使用 Docs KB 与 Live Source。若未来配置 optional P1/P2，其 stale、unavailable 或 refresh 失败不得阻塞 review；旧 revision facts 不能作为当前 revision 的确定事实。Live Source 无法准备到目标 revision 时则不能伪装成功。
 
-Knowledge update 需要支持手动 `arkui-review knowledge update`、`arkui-review knowledge status` 和每日自动 refresh。每日最低刷新 ArkUI repository 与 Docs KB revision，并使 Live Source 指向目标 revision；P1/P2 refresh 可以尝试但不是成功门槛。
+Knowledge update 支持手动 `arkui-review knowledge update`、`arkui-review knowledge status` 和每日自动 refresh。每日最低刷新 ArkUI repository 与 Docs KB revision，并使 Live Source 指向目标 revision；当前 runtime 不配置或刷新 P1/P2。
 
 ### 3.4 Review result
 
@@ -95,7 +97,7 @@ Knowledge update 需要支持手动 `arkui-review knowledge update`、`arkui-rev
 
 ### P0/P1/P2
 
-P0、P1、P2 是已完成历史基础。completed plans、specs、tests、frozen fixtures 和 evaluation baseline 均保留：P1/P2 只改变为 Fast-MVP 中的 optional provider 使用方式，不删除、不重写 frozen semantics。
+P0、P1、P2 是已完成历史基础。completed plans、specs、tests、frozen fixtures 和 evaluation baseline 均保留：P1/P2 保留为未来 optional provider 能力，当前 runtime 不接入，也不删除或重写 frozen semantics。
 
 ### P3-A～E
 
@@ -121,7 +123,7 @@ M0 Foundation & External Tool Smoke
  → M6 Demo Validation & Hardening
 ```
 
-Fast-MVP 的阶段边界以 [Phase Map](../exec-plans/phase-map.md) 为准。当前 active plan 是 [Fast-MVP-code-review.md](../exec-plans/active/Fast-MVP-code-review.md)；M0–M6 已完成。当前 CLI runtime 使用 Docs KB 与 Live Source；P1/P2 仍是架构上的可选增强，不属于已验收 runtime 路径。
+Fast-MVP 的阶段边界以 [Phase Map](../exec-plans/phase-map.md) 为准。已完成计划是 [Fast-MVP-code-review.md](../exec-plans/completed/Fast-MVP-code-review.md)；M0–M6 已完成。当前 CLI runtime 使用 Docs KB 与 Live Source；P1/P2 仍是架构上的可选增强，不属于已验收 runtime 路径。下一阶段尚未定义。
 
 ## 6. MVP 之后
 

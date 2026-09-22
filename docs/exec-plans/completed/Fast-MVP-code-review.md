@@ -1,10 +1,9 @@
 # Fast-MVP — GitCode ArkUI Automated Code Review
 
-- **Route Status:** Active
-- **Current milestone:** M6 — Demo Validation / Hardening
-- **Current milestone status:** Completed
+- **Route Status:** Completed
+- **Final milestone:** M6 — Demo Validation / Hardening (Completed)
 - **Supersedes:** incomplete R1–R6 complete Service/MCP route
-- **Reuses:** completed P0/P1/P2, P3-A～E contracts, and R0 Review Service Foundation where useful
+- **Reuses:** completed P0 and R0 foundation where useful; preserves P1/P2/P3-A～E historical contracts for future optional use
 - **Architecture:** [Technical Roadmap](../../architecture/technical-roadmap.md)
 - **Phase boundary:** [Phase Map](../phase-map.md)
 
@@ -26,7 +25,7 @@ GitCode PR
   → prepare ArkUI repository revision
   → non-interactive Codex / Code Agent
   → ArkUI Code Review Skill
-  → Docs KB + Live Source + optional P1/P2
+  → Docs KB + Live Source (current runtime)
   → structured findings or valid zero findings
   → GitCode PR summary comment
   → persist completed review identity
@@ -66,7 +65,7 @@ GitCode PR
 - **OpenCodeReview:** 可选；只在 smoke 后证明能显著缩短交付时复用，不成为 MVP 必需依赖。
 - **ArkUI target repository:** 由显式配置提供，默认只读，不 vendor 到本仓库。
 - **Docs KB / `kb_search`:** MVP 必需的领域知识来源。
-- **P1/P2:** 本仓库已有能力，可选接入，不是 availability gate。
+- **P1/P2:** 本仓库已有历史能力，保留为未来可选接入；未进入本次 runtime。
 
 Credentials 不进入仓库、日志、structured findings 或持久化 review result。外部工具失败必须映射为可诊断 failure，不能被当作 zero findings。
 
@@ -77,11 +76,9 @@ Credentials 不进入仓库、日志、structured findings 或持久化 review r
 1. 读取 changed diff 与修改函数上下文；
 2. 用 Docs KB / `kb_search` 获取架构和领域规则；
 3. 用 Git、filesystem、`rg` 核实目标 revision 的真实源码；
-4. 按需查询 P1 symbols、definition、references、callers、callees、tests；
-5. 按需查询 P2 ArkUI role、framework relations 和 bounded traces；
-6. 对每条 finding 保留可复核 evidence。
+4. 对每条 finding 保留可复核 evidence。P1/P2 的按需查询是未来显式接入 optional provider 时的扩展，不属于当前 runtime。
 
-Live Source 是当前源码事实的最终 source of truth。P1/P2 只有在 revision 对齐或兼容语义明确时才能支持 current-fact claim；否则排除该 claim，并记录 stale/unavailable/degraded。Docs KB + Live Source 必须能独立完成 review。
+Live Source 是当前源码事实的最终 source of truth。Docs KB + Live Source 可独立完成 review。若未来配置 P1/P2，只有在 revision 对齐或兼容语义明确时才能支持 current-fact claim；否则排除该 claim。
 
 ## Review categories and result contract
 
@@ -132,7 +129,7 @@ Structured result 至少表达 status、repository/PR/base/head identity、provi
 
 - **Status:** Completed
 - **Scope:** configurable polling/repository/author whitelist；full review identity dedup；JSON/SQLite state；manual/daily knowledge refresh。
-- **Acceptance:** `list → filter → dedup → prepare → review → publish → persist` 可运行；`knowledge update/status` 可用；每日检查 repository、Docs KB revision 和 Live Source；P1/P2 不进入 M5 runtime refresh，unavailable/stale 不阻塞 review。
+- **Acceptance:** `list → filter → dedup → prepare → review → publish → persist` 可运行；`knowledge update/status` 可用；每日检查 repository、Docs KB revision 和 Live Source；P1/P2 不进入 M5 runtime 配置或 refresh。
 - **Validation:** 候选 review 在独立 detached runtime worktree 准备目标 head revision，主 ArkUI worktree 不切换 HEAD；Docs KB、Live Source 和 Agent 使用 prepared root，结束后清理。本轮 M5 targeted tests 为 25 passed、0 failed。用户确认 `muil793608902/arkui-review-test#1` 首次 poll 发现并发布 comment `8cf647c450d12e0eb4703c954a702c30ba7f3bac`，相同 identity 的第二次 poll 被 dedup，未重复发布。
 
 ### M6 — Demo Validation / Hardening
@@ -186,6 +183,23 @@ M0/M1 明确允许执行 Codex CLI capability smoke、真实 GitCode public-read
 ```
 
 演示必须至少显示一个真实 PR、所用 base/head SHA、knowledge/degradation 状态、结构化结果、已发布 summary comment，以及相同完整 identity 重复触发未产生第二次 review；head、base 或 policy version 变化应触发重新 review。
+
+## Final validation summary
+
+| 验收项 | 结果 |
+| --- | --- |
+| M5 targeted tests | 25 passed，0 failed |
+| M6 targeted tests | 44 passed，0 failed |
+| Real GitCode manual review / publish | Passed；`muil793608902/arkui-review-test#1` detached head review、structured zero findings、显式 comment 发布 |
+| Real polling / author whitelist | Passed；允许作者触发检视，不在 whitelist 的作者 `discovered=1, filtered=1`，无发布 |
+| Poll interval | Passed；`--interval 2` 连续两轮真实 poll |
+| Full identity dedup | Passed；相同 `repository + pr_id + base_sha + head_sha + review_policy_version` 跳过 Agent 与发布；base/policy 变化由 targeted tests 覆盖 |
+| New-head re-review / SQLite persistence | Passed；测试 PR 新 head `24f3c4aba62452443efc79b86f8fd35e2f78ca0c` 完成 review、publish 和新的 completed state，重复轮询被跳过 |
+| ArkUI knowledge status / update | Passed；真实 ArkUI Git checkout 上 Docs KB 与 Live Source ready，Docs KB 查询返回 evidence |
+| Docs KB unavailable degradation | Passed；测试 PR 缺 Docs KB 时报告 unavailable/degraded，Live Source ready，Codex 成功返回 zero findings |
+| Published comment content | Passed；含目标 head 与 degradation 状态，无 token、prompt 或 trace 泄漏 |
+
+未运行 strict full suite 或真实 ArkUI baseline；这两项不属于本轮自动验证。
 
 ## Explicitly deferred work
 

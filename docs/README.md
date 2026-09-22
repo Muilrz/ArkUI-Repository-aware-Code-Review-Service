@@ -22,10 +22,10 @@
 ## 当前状态
 
 - P0、P1、P2 已完成，计划保存在 `exec-plans/completed/`。
-- P1/P2 作为 Fast-MVP optional provider 复用。既有 specs、baseline 和 frozen fixtures 保持不变。
+- P1/P2 保留为架构上的 optional provider，未进入已验收 Fast-MVP runtime。既有 specs、baseline 和 frozen fixtures 保持不变。
 - P3-A～E 已完成，其 `specs/task-change-context/` 与 `evaluation/p3-*` 继续记录已实现行为和验收事实。
 - 未完成的旧 P3 计划已标记 `Superseded` 并移至 [`exec-plans/superseded/P3-task-change-context.md`](exec-plans/superseded/P3-task-change-context.md)。P3-F incremental lifecycle、P4 Agent Runtime 和旧 P5 Engineering Agent 路线不再继续。
-- R0 Review Service Foundation 已完成，计划保存在 [`exec-plans/completed/R0-review-service-foundation.md`](exec-plans/completed/R0-review-service-foundation.md)。原 R1–R6 路线已被 Fast-MVP 取代；当前 active plan 是 [`exec-plans/active/Fast-MVP-code-review.md`](exec-plans/active/Fast-MVP-code-review.md)，当前实施入口 M0 为 `Not Started`。
+- R0 Review Service Foundation 已完成，计划保存在 [`exec-plans/completed/R0-review-service-foundation.md`](exec-plans/completed/R0-review-service-foundation.md)。原 R1–R6 路线已被 Fast-MVP 取代；Fast-MVP M0–M6 已完成，计划保存在 [`exec-plans/completed/Fast-MVP-code-review.md`](exec-plans/completed/Fast-MVP-code-review.md)。当前没有已批准的下一阶段 active plan。
 
 ## 当前架构入口
 
@@ -36,7 +36,7 @@
 - [`architecture/code-graph-architecture.md`](architecture/code-graph-architecture.md)：P2 frozen semantics 与 `P2Provider` 边界；
 - [`decisions/ADR-0005-code-review-service-pivot.md`](decisions/ADR-0005-code-review-service-pivot.md)：前一轮 Service/MCP pivot 的历史决定。
 
-核心原则：优先复用 GitCode API/MCP 和非交互 Codex；Live Source 始终按目标 PR revision 提供源码事实；P1/P2 stale 时显式降级或刷新，不阻塞 `Docs KB + Live Source` review；Skill 不承担 polling，后台轮询属于 lightweight service/CLI；当前不自行建设完整 MCP Server。
+核心原则：优先复用 GitCode API/MCP 和非交互 Codex；Live Source 始终按目标 PR revision 提供源码事实；当前 runtime 使用 Docs KB + Live Source，P1/P2 仅保留为未来可选增强；Skill 不承担 polling，后台轮询属于 lightweight service/CLI；不自行建设完整 MCP Server。
 
 ## 历史规范与验证入口
 

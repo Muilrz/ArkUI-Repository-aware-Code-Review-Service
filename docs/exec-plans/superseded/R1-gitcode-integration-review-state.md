@@ -2,7 +2,7 @@
 
 - **Phase Status:** Superseded
 - **Planning Status:** Superseded
-- **Superseded by:** [Fast-MVP — GitCode ArkUI Automated Code Review](../active/Fast-MVP-code-review.md)
+- **Superseded by:** [Fast-MVP — GitCode ArkUI Automated Code Review](../completed/Fast-MVP-code-review.md)
 - **Superseded reason:** Superseded by Fast-MVP GitCode automated review route
 - **Current implementation milestone:** None; all R1 milestones remained Not Started
 - **Depends on:** completed R0 Review Service Foundation

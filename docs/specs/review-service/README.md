@@ -13,8 +13,8 @@
 | [R0 foundation traceability](r0-traceability.md) | R0-D | Phase Map R0 Definition of Done 的 spec/implementation/test evidence |
 | [Fast-MVP GitCode PR context and CLI](fast-mvp-gitcode-cli.md) | M0/M1 | GitCode REST read/comment boundary、PR carrier、CLI 与失败语义 |
 | [Fast-MVP Code Agent Review Runner](fast-mvp-code-agent-runner.md) | M2 | 通用 Agent port、Codex backend、structured `ReviewResult` 与失败语义 |
-| [Fast-MVP ArkUI Knowledge and Review Skill](fast-mvp-knowledge-skill.md) | M3 | agent-neutral Skill、revision-bound providers、degraded behavior 与 evidence validation |
+| [Fast-MVP ArkUI Knowledge and Review Skill](fast-mvp-knowledge-skill.md) | M3/M6 | agent-neutral Skill、revision-bound providers、当前 runtime 的 degraded behavior 与 evidence validation |
 | [Fast-MVP GitCode Review Publishing](fast-mvp-review-publishing.md) | M4 | Markdown summary formatter、显式 publish opt-in 与 comment failure semantics |
-| [Fast-MVP Automatic Review Lifecycle](fast-mvp-auto-review.md) | M5 | full identity dedup、polling、SQLite completed state 与 Git revision preparation |
+| [Fast-MVP Automatic Review Lifecycle](fast-mvp-auto-review.md) | M5/M6 | full identity dedup、polling、SQLite completed state，以及自动与手动 review 的 Git revision preparation |
 
-Fast-MVP 已有 M1 GitCode boundary、M2 Code Agent runner、M3 lightweight knowledge/Skill、M4 summary publishing，以及 M5 的单进程 polling、SQLite dedup 和最小 Git/Docs KB refresh。完整 MCP、分布式 scheduler 与复杂 repository manager 仍未实现。
+Fast-MVP M0–M6 已完成：GitCode boundary、Code Agent runner、Docs KB + Live Source/Skill、summary publishing、单进程 polling、SQLite 完整 identity dedup、detached revision preparation 和最小 Git/Docs KB refresh 均已实现并验收。完整 MCP、分布式 scheduler 与复杂 repository manager 不属于已实现范围。

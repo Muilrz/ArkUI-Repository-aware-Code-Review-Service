@@ -49,8 +49,8 @@
 历史基础：
 
 - P0 — Engineering Foundation：Completed
-- P1 — Repository Intelligence：Completed，作为 `P1Provider` 被复用
-- P2 — ArkUI Code Graph：Completed，作为 `P2Provider` 被复用；frozen semantics、fixtures 和 baseline 不重写
+- P1 — Repository Intelligence：Completed，保留为未来 optional `P1Provider`；当前 Fast-MVP runtime 不接入
+- P2 — ArkUI Code Graph：Completed，保留为未来 optional `P2Provider`；当前 Fast-MVP runtime 不接入，frozen semantics、fixtures 和 baseline 不重写
 - P3-A～E：已完成 contract 继续保留为当前实现事实
 - 原 P3 后续路线：`Superseded`；不继续开发 P3-F incremental lifecycle、P4 Agent Runtime 或旧 P5 Engineering Agent 路线
 
@@ -66,7 +66,7 @@ R0 — Review Service Foundation 已完成，计划和 specs 继续记录已实�
 - M5 — Auto Polling & Knowledge Refresh
 - M6 — Demo Validation & Hardening
 
-当前 active plan 是 `docs/exec-plans/active/Fast-MVP-code-review.md`。M0–M6 已完成；不因 M6 完成而自动开始后续阶段。
+Fast-MVP M0–M6 已完成，计划保存在 `docs/exec-plans/completed/Fast-MVP-code-review.md`。当前没有已批准的下一阶段 active plan；不因 M6 完成而自动开始后续开发。
 
 ## Core Architecture Boundaries
 
@@ -84,7 +84,7 @@ R0 — Review Service Foundation 已完成，计划和 specs 继续记录已实�
 - Docs KB / `kb_search` 与 Live Source 是 MVP 必选；Live Source 使用目标 repository revision 的 Git、filesystem 和 `rg`，是源码事实的最终 source of truth。
 - P1 继续提供 symbol / definition / references / callers / callees / tests；P2 继续提供 ArkUI-specific semantic relations，二者均为 optional enhancement。
 - 当前 Fast-MVP CLI runtime 只配置 ArkUI Review Skill、Docs KB / `kb_search.py` 与 Git / `rg` / filesystem Live Source；P1/P2 不作为 M6 runtime 验收依赖。
-- P1/P2 stale、unavailable 或 refresh 失败时不得阻塞 review；必须能以 `Docs KB + Live Source` degraded review。旧 revision 的 P1/P2 facts 不能作为当前 revision 的确定事实。
+- 若未来显式配置 optional P1/P2 provider，其 stale、unavailable 或 refresh 失败不得阻塞 review；旧 revision facts 不能作为当前 revision 的确定事实。当前 runtime 的 degraded review 以 Docs KB 状态和 Live Source 证据为准。
 - knowledge status 应按来源报告 revision、ready/stale/unavailable/error 和必要 diagnostics；不得以统一 snapshot readiness 作为 review 的硬门槛。
 - 第一阶段 review category 为 Stability、Memory / Resource / Lifetime、Functional Correctness。Review 允许成功地产生 zero findings；无足够源码证据不得制造 finding。
 
@@ -93,7 +93,7 @@ R0 — Review Service Foundation 已完成，计划和 specs 继续记录已实�
 - 自动检视固定属于 lightweight service/CLI：`poll → GitCode adapter → author filter → full identity dedup → knowledge prepare → review → publish → persist`。
 - Fast-MVP 自动 dedup identity 为 `repository + pr_id + base_sha + head_sha + review_policy_version`；R0 的四字段 `ReviewIdentity` 历史 contract 不变。
 - MVP state 使用简单 JSON 或 SQLite；不引入 Redis、Celery、Kafka 或 distributed queue。
-- 支持 manual knowledge update/status 和每日 refresh；P1/P2 refresh 可失败并降级，Live Source 无法准备到目标 revision 时不得伪装成功。
+- 支持 manual knowledge update/status 和每日 Git/Docs KB/Live Source refresh；当前 runtime 不配置或刷新 P1/P2。Live Source 无法准备到目标 revision 时不得伪装成功。
 
 ### Historical P1/P2/P3 Contracts
 
