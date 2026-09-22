@@ -8,16 +8,16 @@
 GitCode PR
   → PR metadata / base SHA / head SHA / diff
   → author whitelist
-  → head SHA dedup
+  → full review identity dedup
   → prepare target ArkUI revision
   → Codex / Code Agent + ArkUI Code Review Skill
   → Docs KB + Live Source + optional P1/P2
   → structured findings
   → GitCode PR summary comment
-  → persist reviewed head SHA
+  → persist completed review identity
 ```
 
-Fast-MVP 优先复用现成 GitCode API/MCP、Codex CLI，以及经 smoke 验证后确有价值的 OpenCodeReview 能力。当前不自行建设完整 MCP Server，也不建设 generic Agent Runtime。自动 polling、author filter、head SHA dedup、knowledge refresh 和状态持久化属于轻量 Fast-MVP service/CLI，不属于 Skill 或外部 Agent。
+Fast-MVP 优先复用现成 GitCode API/MCP、Codex CLI，以及经 smoke 验证后确有价值的 OpenCodeReview 能力。当前不自行建设完整 MCP Server，也不建设 generic Agent Runtime。自动 polling、author filter、完整 review identity dedup、knowledge refresh 和状态持久化属于轻量 Fast-MVP service/CLI，不属于 Skill 或外部 Agent。
 
 本文件是当前长期产品方向和架构边界的最高层 source of truth。阶段与 Definition of Done 见 [Phase Map](../exec-plans/phase-map.md)，当前具体执行见 [Fast-MVP execution plan](../exec-plans/active/Fast-MVP-code-review.md)。既有专题架构与 [ADR-0005](../decisions/ADR-0005-code-review-service-pivot.md) 保留旧 R0–R6 路线的设计价值和历史背景，但不再决定当前执行顺序。
 
@@ -28,7 +28,7 @@ arkui-review CLI / lightweight service
 ├── GitCode minimal adapter (existing API/MCP preferred)
 ├── manual review command
 ├── polling loop + author whitelist
-├── head SHA dedup + simple state
+├── full identity dedup + simple state
 ├── knowledge update/status
 ├── Codex non-interactive runner
 └── result formatter/publisher
@@ -55,9 +55,9 @@ MVP 可以复用 R0 已实现的 platform-neutral domain model、ports、configu
 
 - GitCode 私有 schema、鉴权和错误应停留在最小 adapter 边界；优先复用已有 GitCode API/MCP implementation。
 - 第一版只需要读取 open PR、metadata、author、base/head SHA、changed files/diff，并发布一个 summary comment。
-- 自动流程固定为 `poll → author filter → head SHA dedup → review → publish → persist`。
+- 自动流程固定为 `poll → author filter → full identity dedup → knowledge prepare → review → publish → persist`。
 - polling interval、repository 和 author whitelist 必须可配置；Skill 不维持后台 polling。
-- MVP review identity 至少为 `repository + pr_id + head_sha`。若复用 R0 的 `review_policy_version`，可以继续保留。
+- Fast-MVP 自动 dedup 使用 `repository + pr_id + base_sha + head_sha + review_policy_version`；base 变化即使 head 不变也要重新 review。R0 四字段 `ReviewIdentity` 保留为历史 contract。
 - 状态可使用简单 JSON 或 SQLite；不引入 Redis、Celery、Kafka 或 distributed queue。
 
 ### 3.2 Codex runner 与 Skill

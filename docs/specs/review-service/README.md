@@ -15,5 +15,6 @@
 | [Fast-MVP Code Agent Review Runner](fast-mvp-code-agent-runner.md) | M2 | 通用 Agent port、Codex backend、structured `ReviewResult` 与失败语义 |
 | [Fast-MVP ArkUI Knowledge and Review Skill](fast-mvp-knowledge-skill.md) | M3 | agent-neutral Skill、revision-bound providers、degraded behavior 与 evidence validation |
 | [Fast-MVP GitCode Review Publishing](fast-mvp-review-publishing.md) | M4 | Markdown summary formatter、显式 publish opt-in 与 comment failure semantics |
+| [Fast-MVP Automatic Review Lifecycle](fast-mvp-auto-review.md) | M5 | full identity dedup、polling、SQLite completed state 与 Git revision preparation |
 
-除 Fast-MVP M1 GitCode boundary、M2 Code Agent runner、M3 lightweight knowledge/Skill 与 M4 summary publishing 外，durable store/dedup、MCP、knowledge refresh 和 Scheduler 仍未实现，不从 architecture 提前声明为现有能力。
+Fast-MVP 已有 M1 GitCode boundary、M2 Code Agent runner、M3 lightweight knowledge/Skill、M4 summary publishing，以及 M5 的单进程 polling、SQLite dedup 和最小 Git/Docs KB refresh。完整 MCP、分布式 scheduler 与复杂 repository manager 仍未实现。

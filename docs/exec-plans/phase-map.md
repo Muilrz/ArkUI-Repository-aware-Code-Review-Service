@@ -9,7 +9,7 @@
 ## 2. Global principles
 
 - 优先复用现成 GitCode API/MCP、Codex CLI 和经 smoke 验证的外部工具，不自行开发完整 MCP Server。
-- 不建设 generic Agent Runtime。自动 polling、author filter、head SHA dedup、knowledge refresh 和 state persistence 属于 lightweight service/CLI。
+- 不建设 generic Agent Runtime。自动 polling、author filter、full identity dedup、knowledge refresh 和 state persistence 属于 lightweight service/CLI。
 - Docs KB + Live Source 是最低可用知识路径；Live Source 对目标 repository revision 的源码事实具有最终权威。
 - P1/P2 是 optional enhancement；stale、unavailable 或 refresh failure 不阻塞 degraded review，也不得被当作当前 revision 的确定事实。
 - Review 只在有足够源码证据时产生 finding；zero findings 是合法成功结果，且必须与 Agent failure 区分。
@@ -73,7 +73,7 @@ R0 的 `Completed` 是已验收实现事实；“route superseded”表示它不
 
 ## 8. M4 — GitCode Review Publishing
 
-**Status:** In Progress
+**Status:** Completed
 
 **Definition of Done:**
 
@@ -83,13 +83,15 @@ R0 的 `Completed` 是已验收实现事实；“route superseded”表示它不
 
 ## 9. M5 — Auto Polling & Knowledge Refresh
 
+**Status:** In Progress
+
 **Definition of Done:**
 
-1. 可配置 repository、polling interval 和 author whitelist；流程遵循 `list → filter → head SHA dedup → review → publish → persist`。
-2. 同一 `repository + pr_id + head_sha` 不重复 review；若复用 policy version，则它继续参与 identity。
+1. 可配置 repository、polling interval 和 author whitelist；流程遵循 `list → filter → full identity dedup → refresh/prepare → review → publish → persist`。
+2. 同一 `repository + pr_id + base_sha + head_sha + review_policy_version` 不重复 review；base 或 policy 变化可重新 review。
 3. 简单 JSON 或 SQLite state 支持进程重启后的 dedup，不引入 distributed queue infrastructure。
 4. `arkui-review knowledge update/status` 可用，并支持每日 repository/Docs KB/Live Source refresh。
-5. P1/P2 refresh failure 明确报告 stale/unavailable/degraded，且不阻塞 Docs KB + Live Source review。
+5. M5 runtime 不刷新 P1/P2；其 unavailable/stale 状态不阻塞 Docs KB + Live Source review。
 
 ## 10. M6 — Demo Validation & Hardening
 
@@ -102,6 +104,6 @@ R0 的 `Completed` 是已验收实现事实；“route superseded”表示它不
 
 ## 11. Dependency and execution rules
 
-默认交付顺序为 `M0 → M1 → M2 → M3 → M4 → M5 → M6`。当前 active plan 是 [`active/Fast-MVP-code-review.md`](active/Fast-MVP-code-review.md)，M0–M3 已完成；当前 milestone 为 M4，状态为 `In Progress`。
+默认交付顺序为 `M0 → M1 → M2 → M3 → M4 → M5 → M6`。当前 active plan 是 [`active/Fast-MVP-code-review.md`](active/Fast-MVP-code-review.md)，M0–M4 已完成；当前 milestone 为 M5，状态为 `In Progress`。
 
 Status 统一使用 `Not Started`、`In Progress`、`Blocked`、`Completed`、`Superseded`。开始实现时只将所选 milestone 设为 `In Progress`；只有 Acceptance Criteria 与必需验证全部通过才能标记 `Completed`。本次路线切换是纯文档修改，不表示 M0 已开始。

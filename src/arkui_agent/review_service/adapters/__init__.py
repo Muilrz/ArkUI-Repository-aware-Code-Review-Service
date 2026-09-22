@@ -8,6 +8,8 @@ from .gitcode_rest import (
     UrllibHttpTransport,
 )
 from .codex_agent import CodexAgentRunner
+from .git_revision import GitRevisionPreparer
+from .sqlite_review_state import SqliteReviewState
 from .process import ProcessResult, ProcessRunner, SubprocessRunner
 from .knowledge import (
     DocsKbProvider,
@@ -21,6 +23,7 @@ __all__ = [
     "CodexAgentRunner",
     "DocsKbProvider",
     "GitCodeRestAdapter",
+    "GitRevisionPreparer",
     "HttpResponse",
     "HttpTransport",
     "LiveSourceProvider",
@@ -29,5 +32,6 @@ __all__ = [
     "ProcessResult",
     "ProcessRunner",
     "SubprocessRunner",
+    "SqliteReviewState",
     "UrllibHttpTransport",
 ]

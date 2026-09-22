@@ -66,14 +66,14 @@ R0 — Review Service Foundation 已完成，计划和 specs 继续记录已实�
 - M5 — Auto Polling & Knowledge Refresh
 - M6 — Demo Validation & Hardening
 
-当前 active plan 是 `docs/exec-plans/active/Fast-MVP-code-review.md`。M0–M3 已完成；当前实施 milestone 为 M4，状态为 `In Progress`；不得提前开始 M5+。
+当前 active plan 是 `docs/exec-plans/active/Fast-MVP-code-review.md`。M0–M4 已完成；当前实施 milestone 为 M5，状态为 `In Progress`；不得提前开始 M6。
 
 ## Core Architecture Boundaries
 
 ### Fast-MVP components
 
 - `GitCode minimal adapter` 隔离平台私有 API；优先复用现成 GitCode API/MCP，只实现 PR metadata/diff 读取与 summary comment 发布所需能力。
-- lightweight poller/service 负责 polling interval、repository、author whitelist、head SHA dedup、review 调用、publish 和 state persistence。
+- lightweight poller/service 负责 polling interval、repository、author whitelist、完整 review identity dedup、review 调用、publish 和 state persistence。
 - Codex runner 使用非交互 Codex CLI，并以明确 JSON/schema 区分 structured success、zero findings 和 Agent failure。
 - `skills/arkui-code-review/` 指导 Codex/其他 Code Agent 获取 ArkUI 上下文和执行 review，不承担 polling、scheduler、dedup、credentials 或持久化。
 - structured result 由 formatter 转成 GitCode PR summary comment；第一版不要求精确 inline comment。
@@ -89,8 +89,8 @@ R0 — Review Service Foundation 已完成，计划和 specs 继续记录已实�
 
 ### Automation and identity
 
-- 自动检视固定属于 lightweight service/CLI：`poll → GitCode adapter → author filter → head SHA dedup → review → publish → persist`。
-- MVP review identity 至少为 `repository + pr_id + head_sha`；若复用 R0 `review_policy_version`，可以继续保留。
+- 自动检视固定属于 lightweight service/CLI：`poll → GitCode adapter → author filter → full identity dedup → knowledge prepare → review → publish → persist`。
+- Fast-MVP 自动 dedup identity 为 `repository + pr_id + base_sha + head_sha + review_policy_version`；R0 的四字段 `ReviewIdentity` 历史 contract 不变。
 - MVP state 使用简单 JSON 或 SQLite；不引入 Redis、Celery、Kafka 或 distributed queue。
 - 支持 manual knowledge update/status 和每日 refresh；P1/P2 refresh 可失败并降级，Live Source 无法准备到目标 revision 时不得伪装成功。
 

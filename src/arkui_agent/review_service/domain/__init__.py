@@ -3,6 +3,7 @@
 from .agent import AgentKnowledgeContext, AgentReviewRequest
 from .evidence import ProviderEvidenceRef, ProviderStatus, ProviderStatusRef
 from .finding import ReviewFinding, ReviewSeverity
+from .fast_mvp_identity import FastMvpReviewIdentity
 from .identity import ReviewIdentity
 from .job import (
     ReviewFailureStage,
@@ -37,6 +38,7 @@ __all__ = [
     "PullRequestContext",
     "PullRequestSummary",
     "ReviewFinding",
+    "FastMvpReviewIdentity",
     "ReviewFailureStage",
     "ReviewIdentity",
     "ReviewJobFailure",

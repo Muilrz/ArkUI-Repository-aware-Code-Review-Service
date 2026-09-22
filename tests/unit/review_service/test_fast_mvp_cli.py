@@ -334,6 +334,37 @@ class FastMvpCliTests(unittest.TestCase):
         self.assertFalse(factory_called)
         self.assertIn("--publish requires --agent", stderr.getvalue())
 
+    def test_m5_poll_and_knowledge_cli_arguments(self) -> None:
+        parser = build_parser()
+        poll = parser.parse_args(
+            ["poll", "--repository", CONTEXT.repository, "--authors", "hct95",
+             "--interval", "600", "--policy-version", "v2", "--once"]
+        )
+        self.assertEqual(poll.command, "poll")
+        self.assertTrue(poll.once)
+        self.assertEqual(poll.interval, 600)
+        status = parser.parse_args(["knowledge", "status"])
+        self.assertEqual(status.action, "status")
+        update = parser.parse_args(["knowledge", "update"])
+        self.assertEqual(update.action, "update")
+
+    def test_poll_requires_write_token_before_network(self) -> None:
+        called = False
+
+        def factory(repository: str, token: SecretValue | None) -> StaticAdapter:
+            nonlocal called
+            called = True
+            return StaticAdapter()
+
+        stderr = io.StringIO()
+        result = run(
+            ["poll", "--repository", CONTEXT.repository, "--once"],
+            environ={}, stderr=stderr, adapter_factory=factory,
+        )
+        self.assertEqual(result, 1)
+        self.assertFalse(called)
+        self.assertIn("review service configuration is invalid", stderr.getvalue())
+
 
 if __name__ == "__main__":
     unittest.main()

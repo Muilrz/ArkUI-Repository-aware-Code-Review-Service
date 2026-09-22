@@ -1,8 +1,10 @@
 from __future__ import annotations
 
 import argparse
+import json
 import os
 import sys
+import time
 from collections.abc import Callable, Mapping, Sequence
 from pathlib import Path
 from typing import Protocol, TextIO
@@ -11,22 +13,39 @@ from .adapters import (
     CodexAgentRunner,
     DocsKbProvider,
     GitCodeRestAdapter,
+    GitRevisionPreparer,
     LiveSourceProvider,
     P1KnowledgeProvider,
     P2KnowledgeProvider,
+    SqliteReviewState,
 )
 from .application import (
+    AutoReviewService,
     CodeAgentReviewService,
     ReviewPublishingService,
     ReviewKnowledgeFacade,
     build_agent_output_schema,
     build_diff_review_prompt,
 )
-from .domain import AgentKnowledgeContext, PullRequestContext, ReviewResult
-from .ports import CodeAgentRunner, ReviewServiceError, SecretValue
+from .domain import (
+    AgentKnowledgeContext,
+    PullRequestContext,
+    PullRequestSummary,
+    ReviewResult,
+)
+from .ports import (
+    CodeAgentRunner,
+    ReviewConfigurationError,
+    ReviewServiceError,
+    SecretValue,
+)
 
 
 class PullRequestContextReader(Protocol):
+    def list_open_prs(self, *, limit: int = 20) -> tuple[PullRequestSummary, ...]:
+        """Return recent open pull-request summaries for polling."""
+        ...
+
     def get_pr_context(self, pr_id: str | int) -> PullRequestContext:
         """Return one revision-bound PR context."""
         ...
@@ -73,6 +92,18 @@ def build_parser() -> argparse.ArgumentParser:
         action="store_true",
         help="explicitly publish the formatted review as one GitCode PR comment",
     )
+    poll = subparsers.add_parser("poll", help="run the M5 automatic review loop")
+    poll.add_argument("--repository", help="defaults to GITCODE_REPOSITORY")
+    poll.add_argument("--repository-root", help="defaults to ARKUI_REPO_ROOT")
+    poll.add_argument("--authors", help="comma-separated whitelist; defaults to ARKUI_REVIEW_AUTHORS")
+    poll.add_argument("--interval", type=_positive_integer, help="seconds; defaults to ARKUI_REVIEW_POLL_INTERVAL or 600")
+    poll.add_argument("--policy-version", help="defaults to ARKUI_REVIEW_POLICY_VERSION or v1")
+    poll.add_argument("--state", help="SQLite path; defaults to var/review-state.sqlite")
+    poll.add_argument("--agent", default="codex")
+    poll.add_argument("--once", action="store_true", help="run one cycle and exit")
+    knowledge = subparsers.add_parser("knowledge", help="inspect or update target repository knowledge")
+    knowledge.add_argument("action", choices=("update", "status"))
+    knowledge.add_argument("--repository-root", help="defaults to ARKUI_REPO_ROOT")
     return parser
 
 
@@ -91,6 +122,24 @@ def run(
     environment = os.environ if environ is None else environ
     output = sys.stdout if stdout is None else stdout
     errors = sys.stderr if stderr is None else stderr
+
+    if args.command == "knowledge":
+        try:
+            root = _required_root(args.repository_root, environment)
+            preparer = GitRevisionPreparer(root)
+            if args.action == "update":
+                preparer.update()
+            print(json.dumps(preparer.status(), sort_keys=True), file=output)
+            return 0
+        except (ReviewServiceError, ValueError) as error:
+            print(f"error: {error}", file=errors)
+            return 1
+    if args.command == "poll":
+        try:
+            return _run_poll(args, environment, output, adapter_factory, agent_runner_factory, knowledge_context_factory)
+        except (ReviewServiceError, ValueError) as error:
+            print(f"error: {error}", file=errors)
+            return 1
 
     repository = args.repository or environment.get("GITCODE_REPOSITORY")
     if not repository:
@@ -207,6 +256,86 @@ def _prepare_knowledge_context(
 
 def _print_review_result(result: ReviewResult, output: TextIO) -> None:
     print(result.to_json(), file=output)
+
+
+def _required_root(value: str | None, environment: Mapping[str, str]) -> Path:
+    raw = value or environment.get("ARKUI_REPO_ROOT")
+    if not raw:
+        raise ReviewConfigurationError("ARKUI_REPO_ROOT is required")
+    root = Path(raw).resolve()
+    if not root.is_dir():
+        raise ReviewConfigurationError("target repository root is unavailable")
+    return root
+
+
+def _run_poll(
+    args: argparse.Namespace,
+    environment: Mapping[str, str],
+    output: TextIO,
+    adapter_factory: AdapterFactory | None,
+    agent_runner_factory: AgentRunnerFactory | None,
+    knowledge_context_factory: KnowledgeContextFactory | None,
+) -> int:
+    repository = args.repository or environment.get("GITCODE_REPOSITORY")
+    if not repository:
+        raise ReviewConfigurationError("GITCODE_REPOSITORY is required")
+    token_text = environment.get("GITCODE_TOKEN")
+    if not token_text:
+        raise ReviewConfigurationError("GITCODE_TOKEN is required for polling")
+    root = _required_root(args.repository_root, environment)
+    raw_authors = args.authors or environment.get("ARKUI_REVIEW_AUTHORS", "")
+    authors = frozenset(name.strip() for name in raw_authors.split(",") if name.strip())
+    if not authors:
+        raise ReviewConfigurationError("ARKUI_REVIEW_AUTHORS must not be empty")
+    raw_interval = args.interval or environment.get("ARKUI_REVIEW_POLL_INTERVAL", "600")
+    try:
+        interval = _positive_integer(str(raw_interval))
+    except argparse.ArgumentTypeError as error:
+        raise ReviewConfigurationError("poll interval must be a positive integer") from error
+    policy = args.policy_version or environment.get("ARKUI_REVIEW_POLICY_VERSION", "v1")
+    state_path = Path(args.state or "var/review-state.sqlite")
+    adapter = (adapter_factory or _create_adapter)(repository, SecretValue(token_text))
+    runner = (agent_runner_factory or _create_agent_runner)(args.agent)
+    preparer = GitRevisionPreparer(root)
+    service = AutoReviewService(
+        gitcode=adapter,
+        state=SqliteReviewState(state_path),
+        preparer=preparer,
+        authors=authors,
+        policy_version=policy,
+        knowledge_context=lambda context: (
+            knowledge_context_factory or _prepare_knowledge_context
+        )(context, root),
+        review=lambda context, knowledge: CodeAgentReviewService(runner).review(
+            context, knowledge=knowledge
+        ),
+        publish=ReviewPublishingService(adapter).publish,
+    )
+    last_daily_refresh: float | None = None
+    while True:
+        now = time.monotonic()
+        if last_daily_refresh is None or now - last_daily_refresh >= 86_400:
+            preparer.update()
+            preparer.status()
+            last_daily_refresh = now
+        cycle = service.poll_once()
+        print(
+            json.dumps(
+                {
+                    "discovered": cycle.discovered,
+                    "filtered": cycle.filtered,
+                    "deduplicated": cycle.deduplicated,
+                    "published_comment_ids": [
+                        comment_id for _, comment_id in cycle.published
+                    ],
+                }, sort_keys=True
+            ),
+            file=output,
+            flush=True,
+        )
+        if args.once:
+            return 0
+        time.sleep(interval)
 
 
 def _positive_integer(value: str) -> int:

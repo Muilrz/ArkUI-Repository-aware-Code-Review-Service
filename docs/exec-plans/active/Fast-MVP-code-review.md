@@ -1,7 +1,7 @@
 # Fast-MVP — GitCode ArkUI Automated Code Review
 
 - **Route Status:** Active
-- **Current milestone:** M4 — GitCode Review Publishing
+- **Current milestone:** M5 — Auto Polling & Knowledge Refresh
 - **Current milestone status:** In Progress
 - **Supersedes:** incomplete R1–R6 complete Service/MCP route
 - **Reuses:** completed P0/P1/P2, P3-A～E contracts, and R0 Review Service Foundation where useful
@@ -22,14 +22,14 @@
 GitCode PR
   → metadata / base SHA / head SHA / diff
   → author whitelist
-  → head SHA dedup
+  → full review identity dedup
   → prepare ArkUI repository revision
   → non-interactive Codex / Code Agent
   → ArkUI Code Review Skill
   → Docs KB + Live Source + optional P1/P2
   → structured findings or valid zero findings
   → GitCode PR summary comment
-  → persist reviewed head SHA
+  → persist completed review identity
 ```
 
 ## Non-goals
@@ -51,7 +51,7 @@ GitCode PR
 - GitCode minimal adapter 读取 PR context，并发布 summary comment；
 - manual command 处理单个 PR；poller 按 interval 扫描 open PR；
 - author whitelist 在昂贵 review 前执行；
-- state store 以 `repository + pr_id + head_sha` 去重，可选继续包含 `review_policy_version`；
+- state store 以 `repository + pr_id + base_sha + head_sha + review_policy_version` 去重；
 - repository preparer 将 Live Source 对齐到目标 revision；
 - Codex runner 非交互调用 Code Agent，并校验 structured result；
 - ArkUI Review Skill 规定知识获取、证据和 review category；
@@ -123,15 +123,17 @@ Structured result 至少表达 status、repository/PR/base/head identity、provi
 
 ### M4 — GitCode Review Publishing
 
-- **Status:** In Progress
+- **Status:** Completed
 - **Scope:** structured result → formatter → one GitCode PR summary comment。
 - **Acceptance:** finding 包含所需字段；zero-findings success 有明确摘要；publish failure 不写成功状态。
+- **Real smoke:** `muil793608902/arkui-review-test#1` 成功发布 summary comment `60cc6468c819a0903477d54f1ebe03bb2f2007b0`（用户确认）。
 
 ### M5 — Auto Polling & Knowledge Refresh
 
-- **Status:** Not Started
-- **Scope:** configurable polling/repository/author whitelist；head SHA dedup；JSON/SQLite state；manual/daily knowledge refresh。
-- **Acceptance:** `list → filter → dedup → review → publish → persist` 可运行；`knowledge update/status` 可用；每日更新 repository、Docs KB revision 和 Live Source；P1/P2 refresh failure 可诊断并降级。
+- **Status:** In Progress
+- **Scope:** configurable polling/repository/author whitelist；full review identity dedup；JSON/SQLite state；manual/daily knowledge refresh。
+- **Acceptance:** `list → filter → dedup → prepare → review → publish → persist` 可运行；`knowledge update/status` 可用；每日检查 repository、Docs KB revision 和 Live Source；P1/P2 不进入 M5 runtime refresh，unavailable/stale 不阻塞 review。
+- **Current limit:** fetch 只更新 Git metadata；不自动 checkout 或改写外部 ArkUI worktree。目标 HEAD 未对齐时 review 明确失败，真实 revision preparation/daily refresh 验收仍待验证。
 
 ### M6 — Demo Validation / Hardening
 
@@ -145,7 +147,7 @@ Fast-MVP 完成必须同时满足：
 
 1. 能手动 review 单个真实 GitCode PR。
 2. 可配置 polling interval、repository 与 author whitelist。
-3. 同一个 PR + head SHA 不重复 review，新 head SHA 会重新 review。
+3. 同一完整 review identity 不重复 review；base、head 或 policy version 变化可重新 review。
 4. 非交互 Codex 产生通过 schema 校验的 structured result。
 5. 三类 review 使用与目标 revision 对齐的源码证据；zero findings 合法且与 failure 区分。
 6. Review 结果可发布为 GitCode PR summary comment，成功发布后才持久化 reviewed identity。
@@ -180,7 +182,7 @@ M0/M1 明确允许执行 Codex CLI capability smoke、真实 GitCode public-read
   → ArkUI knowledge retrieval
   → structured findings or valid zero findings
   → GitCode comment
-  → head SHA dedup
+  → full review identity dedup
 ```
 
 演示必须至少显示一个真实 PR、所用 head SHA、knowledge/degradation 状态、结构化结果、已发布 summary comment，以及重复触发未产生第二次 review；若 PR 更新为新 head，能够重新 review。
